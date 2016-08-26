@@ -1,0 +1,25 @@
+---
+title: "STAT 8700 Homework 1"
+author: "Brian Detweiler"
+date: "Friday, September 2, 2016"
+output: pdf_document
+---
+
+# 1. Read Chapter 1, identify any areas of confusion for further class discussion (Try to do this part as soon as possible, I will ask at the start of each class next week if there are any topics we'd like to go over.)
+
+# 2. Consider an urn containing 9 balls, which can be either red or green.  Let $X$ be the number of red balls in the urn and before observing any balls we will assume that all possible values of $X$ from 0 to 9 are equally likely. Suppose we plan to draw 3 balls from the urn, and let $Y_i = 1$ if the $i^{th}$ ball is red, and $Y_i = 0$ if the $i^{th}$ ball is green for $i = 1, 2, 3$. When we draw the 3 balls, we observe $Y_1 = 1, Y_2 = 1$, and $Y_3 = 0$. As per our examples in class, construct a table with columns $X$, Prior, Likelihood, Likelihood x Prior, and Posterior to obtain the Posterior Distribution of $X$.
+
+Ok
+```{r}
+print("Stuff")
+```
+
+# 3. Let $Y_1$ be the number of successes in $n = 10$ independent trials where each trial results in a success or failure, and $\theta$, the probability of success in each trial is the same for each trial.  Suppose we believe there are 4 possible values of $\theta$, $\frac{1}{5}, \frac{2}{5}, \frac{3}{5}, \frac{4}{5}$, which we view as equally likely. Now suppose we observe $Y_1 = 7$, use a table similar to the previous question to find the posterior distribution of $\theta$.
+
+
+# 4. Following on from the previous question, suppose we observe another 5 independent trials and $Y_2 = 2$ successes are observed in those 5 trials. Use the posterior distribution for $\theta$ from the previous question as the new prior distribution of $\theta$ and use a table to find the new posterior distribution of $\theta$ based on the added trials.
+
+
+# 5. Suppose we combine all 15 trials from questions 3 and 4 together and think of them as a single set of data in which we observed 9 successes. Starting with our initial uniform prior, use a table to  nd the posterior distribution of $\theta$. Compare your answer to your answer at the end of question 4.
+
+# 6. In R, install a package called Bolstad. This package includes a function called binodp, which stands for "Binomial Data, Discrete Prior", exactly like the situation described in questions 3, 4, and 5.  The function requires 4 inputs, the number of successes, the number of trials, a vector containing the possible values of $\theta$, and a vector containing the corresponding prior probabilities. Note: In R, a vector is specied by c(), so in this example, the vector containing the possible values of $\theta$ would be c(1/5,2/5,3/5,4/5). Use this binodp function to calculate the posterior distribution based on the data in question 5. The function will generate several output tables and one graph. Copy/Paste (do not manually copy) the last output table (the posterior distribution) and the graph into your assignment.
