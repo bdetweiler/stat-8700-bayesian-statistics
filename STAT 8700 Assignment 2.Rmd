@@ -379,7 +379,7 @@ $$
 $$
 \begin{split}
   p(Y = y) &= p(y) = \int_0^1 p(y | M) p(M) d M\\
-  &= \int_0^1 \frac{1}{150} \big( \frac{149}{150} \big)^{M - 1} \cdot \frac{1}{M - 1} dM\\ 
+  &= \int_0^1  \frac{1}{M - 1} \cdot \bigg( \frac{149}{150} \bigg)^{M - 1} \frac{1}{150}  dM\\ 
 \end{split}
 $$
 
