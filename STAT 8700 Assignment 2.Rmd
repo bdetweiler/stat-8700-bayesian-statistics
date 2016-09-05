@@ -3,7 +3,7 @@ title: "STAT 8700 Homework 2"
 author: "Brian Detweiler"
 date: "Friday, September 9, 2016"
 header-includes:
-  - \usepackage[usenames, dvipsnames]{color}
+  - \usepackage{color}
 output: pdf_document
 ---
 # 1. Suppose we observe $y$ successes in $n$ trials where the probability of success in each trial is $\theta$ and suppose we use a $Beta(1, 1)$ prior for $\theta$. Show that the posterior mean can be  written as a weighted average  of the prior mean and the observed proportion of successes, meaning that the posterior mean will always fall between those two values.
@@ -52,6 +52,8 @@ $$
   &= \frac{n + 1}{n + 2} \\
 \end{split}
 $$
+
+
 
 \begin{flushright}
   $\blacksquare$
@@ -135,26 +137,234 @@ $$
 
 ## (a)  Find the posterior distribution of $\theta$. 
 
+Under the uniform prior distribution, the posterior distribution for ballot initiative support is
+$$
+\begin{split}
+  \theta | y &\sim Beta(y + 1, n - y + 1)\\
+  &= Beta(55 + 1, 100 - 55 + 1)\\
+  &= Beta(56, 46)\\
+\end{split}
+$$
+
+```{r}
+library(ggplot2)
+
+# Note: Borrowed from 
+# http://www.obscureanalytics.com/2012/07/04/to-the-basics-bayesian-inference-on-a-binomial-proportion/
+betaplot <- function(a,b) {
+  theta = seq(0,1,0.005)
+  p_theta = dbeta(theta, a, b)
+  p <- qplot(theta, p_theta, geom='line')
+  p <- p + theme_bw()
+  p <- p + ylab(expression(paste('p(',theta,')', sep = '')))
+  p <- p + xlab(expression(theta))
+  return(p)
+}
+betaplot(56, 46)
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
 
 ## (b) What is the posterior mean and variance?
 
+Using our findings from \textbf{1.)}, we have
+
+$$
+\begin{split}
+  E[\theta | y] &= \frac{n}{n + 2} \frac{y}{n} + \frac{2}{n + 2} \frac{1}{2}\\
+  &= \frac{55}{102} + \frac{1}{102}\\
+  &= \frac{56}{102}\\
+  &\approx 0.549\\
+\end{split}
+$$
+
+and from \textbf{2.)}, we have
+
+$$
+\begin{split}
+  Var(\theta | y) &= \frac{E[\theta | y] \big[1 - E[\theta | y]\big]}{n + 3}\\
+  &= \frac{\frac{56}{102} \big[1 - \frac{56}{102} \big]}{103}\\
+  &\approx 0.00240385512667\\
+\end{split}
+$$
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
 ## (c) The \texttt{binobp} command in the \texttt{Bolstad} package in \textsf{R} will calculate the posterior for  binomial data and a beta prior. It requires 4 inputs (in order): $y, n, \alpha, \beta$. The output includes a graph of the prior and posterior distributions. Include this graph in your assignment.
+
+```{r}
+library(Bolstad)
+posterior <- binobp(x=55, n=100, a=1, b=1)
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
 
 ## (d) The command \texttt{abline(v=location, col="colour")} adds a vertical line to a plot, where location should be replaced by the x co-ordinate of the vertical line, and colour should be replaced by the actual color. Add 3 vertical lines to your plot from the previous part: a \textbf{black} line representing the observed proportion of voters who support the initiative, a \textcolor{red}{red} line representing the prior mean, and a \textcolor{blue}{blue} line representing the posterior mean.
 
+```{r}
+posterior <- binobp(x=55, n=100, a=1, b=1)
+abline(v=55/100, col="black")
+abline(v=1/2, col="red")
+abline(v=posterior$mean, col="blue")
+```
+
+Notice, the observed proportion of successes is nearly the same as the posterior mean, so the blue and black lines are hard to distinguish. This is becaus the we have a weakly informed prior (uniform) which has a negligable impact on the observed data.
+
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
 ## (e) Also included in the output from \texttt{binobp} is a table of posterior quantiles. A $95\%$ credible interval for the posterior distribution can be found by using the $0.025$ and $0.975$ quantiles. What is this $95\%$ credible interval for your posterior distribution? (Note this interval is exactly what people wrongly assume the classical confidence interval is, that is there is a $95\%$ chance that $\theta$ will take  a value inside this interval).
+
+The 95% CI for this distribution is obtained by taking the 0.025 and 0.975 probabilities, which results in 
+```{r}
+lower <- posterior$quantiles["0.025"]
+upper <- posterior$quantiles["0.975"]
+c(lower, upper)
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
 
 ## (f) What is of interest to us is whether or not the initiative will pass (that is, receive a majority of Yes votes).  The \textsf{R} command \texttt{pbeta} computes the CDF of a beta distribution and requires 3 inputs (in order): The value where you wish to evaluate the CDF, $\alpha, \beta$. Use this to calculate our posterior probability that the initiate will pass. 
 
+Since \texttt{pbeta} computes the CDF, we are interested in $f(X > 0.5) = 1 - f(X \leq 0.5)$. 
+
+```{r}
+1 - pbeta(q=0.5, 56, 46)
+```
+
+There is an 88.6% chance the ballot will pass.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
 \pagebreak
 
-# 4. Consider the previous question. Suppose we wish to use an informative prior instead. We would like to use a Beta prior will a mean of 0.4 and a prior standard deviation of 0.1. What are the corresponding hyper-parameters of the prior  distribution? Repeat all the steps of the previous question, using the new prior distribution.
+# 4. Consider the previous question. Suppose we wish to use an informative prior instead. We would like to use a Beta prior with a mean of 0.4 and a prior standard deviation of 0.1. What are the corresponding hyper-parameters of the prior  distribution? Repeat all the steps of the previous question, using the new prior distribution.
+
+The hyperparameters that most closesly meet these requirements are $\alpha = 4, \beta = 6$.
+
+$$
+\begin{split}
+  E[\theta] &= \frac{\alpha}{\alpha + \beta}\\
+  &= \frac{4}{4 + 6}\\
+  &= 0.4\\
+  \\
+  Var(\theta) &= \frac{\alpha \beta}{(\alpha + \beta)^2(\alpha + \beta + 1)}\\
+  &= \frac{4 \cdot 6}{(4 + 6)^2(4 + 6 + 1)}\\
+  &= \frac{24}{1100}\\
+  &= \frac{6}{275}\\
+  &= 0.021818182\\
+  \\
+  St. Dev &= \sqrt{0.021818182}\\
+  &= 0.14771\\
+  &\approx 0.1\\
+\end{split}
+$$
+
+
+Under the informative Beta prior distribution, the posterior distribution for ballot initiative support is
+
+$$
+\begin{split}
+  \theta | y &\sim Beta(\alpha + y, \beta + n - y)\\
+  &= Beta(40 + 55, 60 + 100 - 55)\\
+  &= Beta(95, 105)\\
+\end{split}
+$$
+
+```{r}
+betaplot(95, 105)
+```
+
+The posterior mean and variance are
+
+$$
+\begin{split}
+  E[\theta | y] &= \frac{\alpha + y}{\alpha + \beta + n}\\
+  &= \frac{40 + 55}{40 + 60 + 100}\\
+  &= \frac{95}{900}\\
+  &= 0.475\\
+  \\
+  Var(\theta | y) &= \frac{E[\theta | y] \big[1 - E[\theta | y]\big]}{\alpha + \beta + n + 1}\\
+  &= \frac{0.475 (1 - 0.475)}{40 + 60 + 100 + 1}\\
+  &\approx 0.00124067\\
+\end{split}
+$$
+
+Using the \texttt{Bolstad} package, 
+
+```{r}
+posterior <- binobp(x=55, n=100, a=40, b=60)
+
+abline(v=55/100, col="black")
+abline(v=0.4, col="red")
+abline(v=posterior$mean, col="blue")
+```
+
+Notice how the new informative prior has shifted the posterior about half-way between its mean and the observed mean. 
+
+
+The 95% CI for this distribution is obtained by taking the 0.025 and 0.975 probabilities, which results in 
+```{r}
+lower <- posterior$quantiles["0.025"]
+upper <- posterior$quantiles["0.975"]
+c(lower, upper)
+```
+
+Since \texttt{pbeta} computes the CDF, we are interested in $f(X > 0.5) = 1 - f(X \leq 0.5)$. 
+
+```{r}
+1 - pbeta(q=0.5, 95, 105)
+```
+
+With our more informative prior, we can see the probability of passing is dragged down much further. We would want to make sure that we have good reason to use such a prior.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
 
 \pagebreak
+
 
 # 5. Each city bus in Omaha is numbered. Suppose that they are numbered sequentially $1, 2, \hdots, M$.
 
 ## (a) If $M$ were known, and $Y$ represents the number of the next bus you see, find an expression for $P(Y = y | M)$.  For what values of $y$ is this valid?
+
+If total number of busses, $M$ is known, then we want the probability of seeing any given bus in the distribution next, any such value of which is equally likely (theoretically). Thus we have a uniform distribution of 
+
+$$
+\begin{split}
+  P(Y = y | M) &= \frac{1}{M - 1}, \text{ for } 1 \leq y \leq M \\ 
+\end{split}
+$$
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
 
 ## (b) Now suppose that $M$ is unknown, as we assume a geometric prior distribution on $M$, that is that 
 
@@ -165,6 +375,14 @@ $$
 $$
 
 ## Furthermore, suppose we observe a single bus, numbered 200. Find the posterior distribution of $M$ (up to a constant of proportionality).
+
+$$
+\begin{split}
+  p(Y = y) &= p(y) = \int_0^1 p(y | M) p(M) d M\\
+  &= \int_0^1 \frac{1}{150} \big( \frac{149}{150} \big)^{M - 1} \cdot \frac{1}{M - 1} dM\\ 
+\end{split}
+$$
+
 
 ## (c) Use software (for example Wolfram-Alpha or Maple) to  find the constant of proportionality for the posterior, and thus  find the posterior mean and variance.
 
