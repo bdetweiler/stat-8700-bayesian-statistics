@@ -397,3 +397,4 @@ binodp(x=9, n=15, pi=c(1/5, 2/5, 3/5, 4/5), pi.prior=c(1/4, 1/4, 1/4, 1/4))
 \begin{flushright}
   $\blacksquare$
 \end{flushright}
+
