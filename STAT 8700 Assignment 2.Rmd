@@ -4,6 +4,7 @@ author: "Brian Detweiler"
 date: "Friday, September 9, 2016"
 header-includes:
   - \usepackage{color}
+  - \usepackage{hyperref}
 output: pdf_document
 ---
 # 1. Suppose we observe $y$ successes in $n$ trials where the probability of success in each trial is $\theta$ and suppose we use a $Beta(1, 1)$ prior for $\theta$. Show that the posterior mean can be  written as a weighted average  of the prior mean and the observed proportion of successes, meaning that the posterior mean will always fall between those two values.
@@ -355,7 +356,7 @@ If total number of busses, $M$ is known, then we want the probability of seeing 
 
 $$
 \begin{split}
-  P(Y = y | M) &= \frac{1}{M - 1}, \text{ for } 1 \leq y \leq M \\ 
+  P(Y = y | M) &= \frac{1}{M}, \text{ for } 1 \leq y \leq M \\ 
 \end{split}
 $$
 
@@ -376,15 +377,68 @@ $$
 
 ## Furthermore, suppose we observe a single bus, numbered 200. Find the posterior distribution of $M$ (up to a constant of proportionality).
 
+We know the likelihood is still discrete uniform, as we are just as likely to see bus 200 as we are any of the busses from 1 to $M$, so $p(M) \propto 1$. Therefore, we have
+
 $$
 \begin{split}
-  p(Y = y) &= p(y) = \int_0^1 p(y | M) p(M) d M\\
-  &= \int_0^1  \frac{1}{M - 1} \cdot \bigg( \frac{149}{150} \bigg)^{M - 1} \frac{1}{150}  dM\\ 
+  p(M | Y = 200) &\propto P(Y = 200 | M) P(M)\\
+  &\propto \frac{1}{150} \bigg( \frac{149}{150} \bigg)^{M-1} \cdot 1\\
+  &= \frac{1}{150} \bigg( \frac{149}{150} \bigg)^{M-1} \cdot c \\
 \end{split}
 $$
 
+for some constant, $c$.
 
-## (c) Use software (for example Wolfram-Alpha or Maple) to  find the constant of proportionality for the posterior, and thus  find the posterior mean and variance.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (c) Use software (for example Wolfram-Alpha or Maple) to  find the constant of proportionality for the posterior, and thus find the posterior mean and variance.
+
+Typing the following into WolframAlpha,
+
+\href{http://www.wolframalpha.com/input/?i=integral+from+0+to+1+c+*+(1%2F150)*(149%2F150)%5E(M+-+1)+dM+%3D+1}{integral from 0 to 1 c(1/150)(149/150)\^(M - 1) dM = 1}
+
+we solve for $c$, which is
+
+$$
+  c = 22350 \cdot log \bigg( \frac{150}{149} \bigg) \\
+$$
+
+The posterior mean is then
+
+$$
+  \begin{split}
+  E[M | Y = 200] &= \int_{0}^{\infty} M \cdot P(M|Y = 200) dM\\
+  &= \int_{0}^{\infty} M \cdot \frac{1}{150} \bigg( \frac{149}{150} \bigg)^{M-1} \cdot \bigg[22350 \cdot log \bigg( \frac{150}{149} \bigg)\bigg] dM \\
+  &= \frac{150}{log\bigg(\frac{150}{149} \bigg)}\\
+  &\approx 22425\\
+  \end{split}
+$$
+
+...which does not seem right.
+
+
+The posterior variance is then
+
+$$
+  \begin{split}
+  Var(M | Y = 200) &= \int_{0}^{\infty} (M - E[M | Y = 200])^2  \cdot \frac{1}{150} \bigg( \frac{149}{150} \bigg)^{M-1} \cdot \bigg[22350 \cdot log \bigg( \frac{150}{149} \bigg)\bigg] dM \\
+  &= \int_{0}^{\infty} (M - 22425)^2  \cdot \frac{1}{150} \bigg( \frac{149}{150} \bigg)^{M-1} \cdot \bigg[22350 \cdot log \bigg( \frac{150}{149} \bigg)\bigg] dM \\
+  \end{split}
+$$
+
+...which does not come out, but probably isn't right anyway.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
 
 ##(d) If we had decided to use the improper uniform prior $p(M) \propto 1$, would this have produced a proper or improper posterior distribution? Show your work.
 
