@@ -1,0 +1,242 @@
+---
+title: "STAT 8700 Homework 3"
+author: "Brian Detweiler"
+date: "Friday, September 16, 2016"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# \colorbox{yellow}{1.} Suppose we have a population described by a Normal Distribution with known variance $\sigma^2 = 1600$ and unknown mean $\mu$. 4 observations are collected from the population and the corresponding values were: 940, 1040, 910, and 990.
+
+```{r}
+y.bar <- mean(940, 1040, 910, 990)
+y.bar
+```
+
+## (a) If we choose to use a Normal(1000, 200^2) prior for $\theta$, and the posterior distribution for $\theta$ by hand.
+
+We just need to find the likelihood $p(y | \sigma^2)$ for $y_1, y_2, y_3, y_4$. Using the data, we have
+
+$$
+\begin{split}
+  p(y | \sigma^2) &= \prod_{i=1}^n \frac{1}{\sigma \sqrt{2 \pi}} e^{- \frac{1}{2 \sigma^2}} (y_i - \mu)^2\\
+  &= \prod_{i=1}^4 \frac{1}{\sqrt{\sigma^2} \sqrt{2 \pi}} e^{- \frac{1}{2 \cdot \sigma^2} (y_i - \mu)^2}\\
+  &= \prod_{i=1}^4 \frac{1}{\sqrt{\sigma^2} \sqrt{2 \pi}} e^{- \frac{1}{2 \cdot \sigma^2} (y_i - \mu)^2}\\
+  &= \bigg[\frac{1}{\sqrt{\sigma^2} \sqrt{2 \pi}}\bigg]^4 e^{- \frac{1}{2 \cdot \sigma^2} \sum_{i=1}^4 (y_i - \mu)^2}\\
+  &= \big(\sigma^2\big)^{-\frac{n}{2}} e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \mu)^2}
+\end{split}
+$$
+
+Now, let $v = \frac{1}{n} \sum_{i = 1}^4 (y_i - \mu)^2$.
+
+We now have
+
+$$
+\begin{split}
+  p(y | \sigma^2) &\propto \big( \sigma^2 \big)^{-\frac{n}{2}} e^{- \frac{n \cdot v}{2 \sigma^2}}\\
+\end{split}
+$$
+
+This takes the shape of an Inverse-Gamma distribution.
+
+$$
+\begin{split}
+  Y &\sim Inv-Gamma(\alpha, \beta)\\
+  p(y| \alpha, \beta) &= \frac{\beta^{\alpha}}{\Gamma(\alpha)} y^{-(\alpha +1)} e^{-\frac{\beta}{y}}\\
+\end{split}
+$$
+
+Now, let $\alpha - \frac{\nu}{2}, \beta = \frac{1}{2}$. This gives us
+
+$$
+\begin{split}
+  Y &\sim Inv-Gamma\bigg(\frac{\nu}{2}, \frac{1}{2}\bigg)\\
+  &= \frac{1}{2^{\frac{\nu}{2}} \Gamma(\frac{\nu}{2})} y^{-(\frac{\nu}{2} + 1)} e^{- \frac{1}{2y}}, y > 0\\
+\end{split}
+$$
+
+which is known as the Inverse-Chi-Square Distribution
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (b) Find, by hand, a 95% credible interval for $\theta$.
+
+A 95% CI for $\theta$ is given by evaluating $p(y|\theta)$ at $y = 0.025$ and $y = 0.975$, with $\nu = 4$ degrees of freedom.
+
+$$
+\begin{split}
+  p(0.025; \theta) &= \frac{1}{2^{\frac{\nu}{2}} \Gamma(\frac{\nu}{2})} y^{-\big(\frac{\nu}{2} + 1\big)} e^{-\frac{1}{2y}}, y > 0\\
+ &= \frac{1}{2^{\frac{4}{2}} \Gamma(\frac{4}{2})} (0.025)^{-\big(\frac{4}{2} + 1\big)} e^{-\frac{1}{2 (0.025)}}\\
+ &= \frac{1}{4} (0.025)^{-3} e^{-\frac{1}{0.05}}\\
+ &\approx 0.000032978457959\\
+ p(0.975; \theta) &= \frac{1}{2^{\frac{\nu}{2}} \Gamma(\frac{\nu}{2})} y^{-\big(\frac{\nu}{2} + 1\big)} e^{-\frac{1}{2y}}, y > 0\\
+ &= \frac{1}{2^{\frac{4}{2}} \Gamma(\frac{4}{2})} (0.975)^{-\big(\frac{4}{2} + 1\big)} e^{-\frac{1}{2 (0.975)}}\\
+ &= \frac{1}{4} 1.07891232152 e^{-\frac{1}{1.95}}\\
+ &\approx 0.161514323478\\
+\end{split}
+$$
+
+This gives us a 95% Credible Interval of (0.000032978457959, 0.161514323478).
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+
+## 2. The \texttt{normnp} function in the \texttt{Bolstad} package computes the posterior for the mean with a Normal prior. The function requires 4 inputs (in order): a vector containing the data, the prior mean, the prior standard deviation, and the population standard deviation. Suppose we consider a Normal population with a variance of 16, and we collect 15 observations from this population with values: 26.8, 26.3, 28.3, 28.5, 26.3, 31.9, 28.5, 27.2, 20.9, 27.5, 28.0, 18.6, 22.3, 25.0, 31.5.
+
+```{r}
+library(Bolstad)
+var <- 16
+obs <- c(26.8, 26.3, 28.3, 28.5, 26.3, 31.9, 28.5, 27.2, 20.9, 27.5, 28.0, 18.6, 22.3, 25.0, 31.5)
+pop.st.dev <- sqrt(16)
+```
+
+## (a) If we choose a $Normal(20, 25)$ prior, Use \textsf{R} to find the posterior distribution for the population mean.
+
+```{r}
+prior.mu <- 20
+prior.st.dev <- sqrt(25)
+
+posterior <- normnp(obs, prior.mu, prior.st.dev, pop.st.dev)
+```
+
+
+## (b) What are the posterior mean and variance?
+
+The posterior mean is `r posterior$mean`, and variance is `r posterior$var`.
+
+
+## (c) Find a 95% credible interval for the population mean. 
+
+A 95% credible interval for the population mean is found at the 0.025 and 0.975 quantiles, 
+(`r posterior$quantiles[['0.025']]`, `r posterior$quantiles[['0.975']]`).
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+# 3. Suppose $y|\theta \sim Poisson(\theta)$, find the Jeffreys' prior density for $\theta$. Find $\alpha$ and $\beta$ for which the $Gamma(\alpha, \beta)$ density is a close match to the Jeffreys' prior.
+
+
+Jeffrey's prior is given by $J(\theta) = \sqrt{I(\theta)}$, where $I(\theta) = -E\bigg[ \frac{\partial^2}{\partial \theta^2} \ln{p(y | \theta)} \bigg]$.
+
+The Poisson distribution we are interested in, is $p(y_n | \theta) = \theta^{\sum_{i = 1}^{n} y_i} e^{- n \theta} \prod_{i = 1}^n \frac{1}{y_i!} $. 
+
+So working through this by parts, we start with the natural log,
+$$
+\begin{split}
+  \ln{\theta^{\sum_{i = 1}^{n} y_i} e^{- n \theta} \prod_{i = 1}^n \frac{1}{y!}} &= \ln{\frac{1}{y!}} - \theta + y \ln{\theta}\\
+  &= \sum_{i = 1}^n y_i \ln{\theta} - n \theta - \ln{\sum_{i = 1}^n y_i !}\\
+\end{split}
+$$
+
+Taking the first derivative with respect to $\theta$, we get
+$$
+\begin{split}
+  \frac{\partial}{\partial \theta} \ln{p(y_n | \theta)} &= \frac{\partial}{\partial \theta} \sum_{i = 1}^n y_i \ln{\theta} - n \theta - \ln{\sum_{i = 1}^n y_i !}\\
+  &= \sum_{i = 1}^n \frac{y_i}{\theta} - n - 0\\
+\end{split}
+$$
+
+Taking the second derivative with respect to $\theta$, we get
+$$
+\begin{split}
+  \frac{\partial^2}{\partial \theta^2} \ln{p(y_n | \theta)} &= \frac{\partial}{\partial \theta} \sum_{i = 1}^n \frac{y_i}{\theta} \\
+  &= -\sum_{i = 1}^n y_i \frac{1}{\theta^2}\\
+\end{split}
+$$
+
+Taking expectations,
+$$
+\begin{split}
+  -E\bigg[- \frac{y}{\theta^2}\bigg | \theta \bigg] &= \frac{n \theta}{\theta^2} \\
+  &= \frac{n}{\theta}\\
+\end{split}
+$$
+
+Finally, taking the square root to get the Jeffrey's prior, $J(I)$, we have
+$$
+\begin{split}
+  \sqrt{I(\theta)} &= \sqrt{\frac{n}{\theta}}\\
+  &\propto \sqrt{\frac{1}{\theta}}\\
+  &= \theta^{\frac{1}{2}}\\
+\end{split}
+$$
+
+This comes closest to $\lim_{\beta \rightarrow 0}Gamma(\frac{1}{2}, \beta)$, though it is not a proper distribution. 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+# 4. Suppose we have multiple independent observations $y_1, y_2, \hdots, y_n$ from a $Poisson(\theta)$ distribution.
+
+## (a) Consider the conjugate Gamma prior. What values of the hyperparameters would lead to a flat (improper) prior distribution for $\theta$?
+
+## (b) Using a general $Gamma(\alpha, \beta)$ prior, derive the posterior distribution for $\theta$. What is the required sufficient statistic needed from the data?
+
+# 5. Derive the gamma posterior distribution (equation 2.15) for the Poisson model parameterized in terms of rate and exposure with conjugate prior distribution.
+
+
+$$
+\begin{split}
+  p(\theta | y) &\propto p(y | \theta) p(\theta)\\
+  &\propto \bigg[ \theta ^{\big( \sum_{i = 1}^n y_i \big)} e ^{-(x_i) \theta} \bigg] \cdot \bigg[ \frac{\beta^{\alpha}}{\Gamma(\alpha)} \theta^{\alpha - 1} e^{-\beta \theta} \bigg]\\
+  &\propto \bigg[ \theta ^{\big( \sum_{i = 1}^n y_i \big)} e ^{-(x_i) \theta} \bigg] \cdot \bigg[ \theta^{\alpha - 1} e^{-\beta \theta} \bigg]\\
+  &= \theta^{\big( \alpha + \sum_{i = 1}^n y_i - 1 \big)} e^{- \big(\beta + \sum_{i = 1}^n x_i \big) \theta}\\
+\end{split}
+$$
+
+And thus we have the posterior as $\theta | y \sim Gamma(\alpha + \sum_{i = 1}^n y_i, \beta + \sum_{i = 1}^n x_i)$.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+# 6. The table at the end of the assignment gives the number of fatal accidents and deaths on scheduled airline flights per year over a ten year period from 1976 to 1985.
+
+## (a) Assume that the number of fatal accidents in each year are independent with a $Poisson(\theta)$ distribution. Using a flat prior for $\theta$, and the posterior distribution for $\theta$ based on the the 10 years of provided data. If you have a $Gamma(\alpha, \beta)$ distribution then the function \texttt{qgamma(q, shape=a, rate=b)} will return the $q$th quantile of the $Gamma(\alpha, \beta)$ distribution. Use this to find the `symmetric' 95% credible interval for $\theta$.
+
+## (b) Now assume that the number of fatal accidents in each year follow independent Poisson distributions with a constant rate and an exposure in each year proportional to the number of passenger miles flown. Again using a flat prior distribution for $\theta$, determine the posterior distribution based on the data. (Estimate the number of passenger miles flown in each year by dividing the appropriate columns of table and ignoring round-off errors, death rate is per 100 million miles.) Give a 95% predictive interval for the number of fatal accidents in 1986 under the assumption that $8 \times 10^{11}$ passenger miles are flown that year.
+
+## (c) Repeat (a) above, replacing 'fatal accidents' with 'passenger deaths.'
+
+## (d) Repeat (b) above, replacing 'fatal accidents' with 'passenger deaths.'
+
+```{r}
+years <- c(1976:1985)
+fatal.accidents <- c(24, 25, 31, 31, 22, 21, 26, 20, 16, 22)
+passenger.deaths <- c(734, 516, 754, 877, 814, 362, 764, 809, 223, 1066)
+death.rate <- c(0.19, 0.12, 0.15, 0.16, 0.14, 0.06, 0.13, 0.13, 0.03, 0.15)
+
+airline.deaths <- as.data.frame(cbind(years, fatal.accidents, passenger.deaths, death.rate))
+airline.deaths
+
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
