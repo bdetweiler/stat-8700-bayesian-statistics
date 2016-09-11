@@ -16,56 +16,93 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
                       echo=TRUE, warning=FALSE, message=FALSE)
 ```
 
-# \colorbox{yellow}{1.} Suppose we have a population described by a Normal Distribution with known variance $\sigma^2 = 1600$ and unknown mean $\mu$. 4 observations are collected from the population and the corresponding values were: 940, 1040, 910, and 990.
+# 1. Suppose we have a population described by a Normal Distribution with known variance $\sigma^2 = 1600$ and unknown mean $\mu$. 4 observations are collected from the population and the corresponding values were: 940, 1040, 910, and 990.
 
 ```{r}
 y.bar <- mean(940, 1040, 910, 990)
 y.bar
 ```
 
-## (a) If we choose to use a Normal(1000, 200^2) prior for $\theta$, and the posterior distribution for $\theta$ by hand.
+## (a) If we choose to use a Normal(1000, 200^2) prior for $\theta$, find the posterior distribution for $\theta$ by hand.
 
-We just need to find the likelihood $p(y | \sigma^2)$ for $y_1, y_2, y_3, y_4$. Using the data, we have
 
-$$
-\begin{split}
-  p(y | \sigma^2) &= \prod_{i=1}^n \frac{1}{\sigma \sqrt{2 \pi}} e^{- \frac{1}{2 \sigma^2}} (y_i - \mu)^2\\
-  &= \prod_{i=1}^4 \frac{1}{\sqrt{\sigma^2} \sqrt{2 \pi}} e^{- \frac{1}{2 \cdot \sigma^2} (y_i - \mu)^2}\\
-  &= \prod_{i=1}^4 \frac{1}{\sqrt{\sigma^2} \sqrt{2 \pi}} e^{- \frac{1}{2 \cdot \sigma^2} (y_i - \mu)^2}\\
-  &= \bigg[\frac{1}{\sqrt{\sigma^2} \sqrt{2 \pi}}\bigg]^4 e^{- \frac{1}{2 \cdot \sigma^2} \sum_{i=1}^4 (y_i - \mu)^2}\\
-  &= \big(\sigma^2\big)^{-\frac{n}{2}} e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \mu)^2}
-\end{split}
-$$
+First, we'll derive the posterior for the single data point case, then for the general case.
 
-Now, let $v = \frac{1}{n} \sum_{i = 1}^4 (y_i - \mu)^2$.
-
-We now have
+### Likelihood for a single data point
 
 $$
 \begin{split}
-  p(y | \sigma^2) &\propto \big( \sigma^2 \big)^{-\frac{n}{2}} e^{- \frac{n \cdot v}{2 \sigma^2}}\\
+  p(y | \theta) &= \frac{1}{\sqrt{2 \pi \sigma}} e^{- \frac{(y - \theta)^2}{2\sigma^2}}\\
 \end{split}
 $$
 
-This takes the shape of an Inverse-Gamma distribution.
+### Normal Prior, s.t. $\theta \sim N(\mu_0, \tau_0^2)$
 
 $$
 \begin{split}
-  Y &\sim Inv-Gamma(\alpha, \beta)\\
-  p(y| \alpha, \beta) &= \frac{\beta^{\alpha}}{\Gamma(\alpha)} y^{-(\alpha +1)} e^{-\frac{\beta}{y}}\\
+  p(\theta) &\propto e^{- \frac{(\theta - \mu_0)^2}{2 \tau_0^2}}\\
 \end{split}
 $$
 
-Now, let $\alpha - \frac{\nu}{2}, \beta = \frac{1}{2}$. This gives us
+### Posterior for single observation
 
 $$
 \begin{split}
-  Y &\sim Inv-Gamma\bigg(\frac{\nu}{2}, \frac{1}{2}\bigg)\\
-  &= \frac{1}{2^{\frac{\nu}{2}} \Gamma(\frac{\nu}{2})} y^{-(\frac{\nu}{2} + 1)} e^{- \frac{1}{2y}}, y > 0\\
+  p(\theta) &\propto e^{\bigg( -\frac{1}{2} \big(\frac{(y - \theta)^2}{\sigma^2} + \frac{(\theta - \mu_0)^2}{\tau_0^2} \big) \bigg)}\\
+  \theta | y &\sim N(\mu_1, \tau_1^2), \text{ s.t. } 
+    \mu_1 = \frac{\frac{1}{\tau_0^2} \mu_0 + \frac{1}{\sigma^2} y}{\frac{1}{\tau_0^2} + \frac{1}{\sigma^2}} \text{ , and}
+      \frac{1}{\tau_1^2} = \frac{1}{\tau_0^2} + \frac{1}{\sigma^2}\\
 \end{split}
 $$
 
-which is known as the Inverse-Chi-Square Distribution
+Now we are set up to extend this model to multiple observations. We will assume these four observations are \textit{i.i.d.}, such that $y = (y_1, y_2, y_3, y_4)$. 
+
+### Posterior density for multiple observations
+
+$$
+\begin{split}
+  p(\theta | y) &\propto p(\theta) p(y | \theta)\\
+  &= p(\theta) \prod_{i = 1}^n p(y_i | \theta)\\
+  &\propto e^{\bigg( - \frac{(\theta - \mu_0)^2}{2 \tau_0^2} \bigg)} \prod_{i = 1}^n e^{\bigg(- \frac{(y_i - \theta)^2}{2\sigma^2} \bigg)}\\
+  &\propto e^{\bigg( - \frac{1}{2} \big( \frac{(\theta - \mu_0)^2}{\tau_0^2} + \frac{1}{\sigma^2} \sum_{i = 1}^n (y_i - \theta)^2 \big) \bigg)}\\
+\end{split}
+$$
+
+After simplifying algebraicly, we find that the posterior depends only on $y$ by the sample mean, $\overline{y} = \frac{1}{n} \sum_{i = 1}^n y_i$, which means $\overline{y}$ is a sufficient statistic. Now, since $\overline{y} | \theta, \sigma^2$, we can treat $\overline{y}$ as a single observation and we get
+
+
+$$
+\begin{split}
+  p(\theta | y_1, y_2, y_3, y_4) &= p(\theta | \overline{y}) = N(\theta | \mu_n, \tau_n^2) 
+    \text{, where } 
+    \mu_n = \frac{\frac{1}{\tau_0^2} \mu_0 + \frac{n}{\sigma^2} \overline{y}}{\frac{1}{\tau_0^2} + \frac{n}{\sigma^2}}
+    \text{ and }
+    \frac{1}{\tau_n^2} = \frac{1}{\tau_0^2} + \frac{n}{\sigma^2}\\
+\end{split}
+$$
+
+Substituting in our values, we have
+
+$$
+\begin{split}
+  n &= 4\\
+  \overline{y} &= 940\\
+  \mu &= \theta\\
+  \sigma^2 &= 1600\\
+  \tau_0^2 &= 200^2\\
+  \frac{1}{\tau_4^2} &= \frac{1}{\tau_0^2} + \frac{n}{\sigma^2}\\
+  &= \frac{1}{200^2} + \frac{4}{1600}\\
+  &= \frac{1}{200^2} + \frac{1}{400}\\
+  &= 0.002525\\
+  \mu_0 &= 1000 \\
+  \mu_4 &= \frac{\frac{1}{\tau_0^2} \mu_0 + \frac{n}{\sigma^2} \overline{y}}{\frac{1}{\tau_0^2} + \frac{n}{\sigma^2}}\\
+  &= \frac{\frac{1}{200^2} 1000 + \frac{4}{1600} 940}{\frac{1}{200^2} + \frac{4}{1600}}\\
+  &= \frac{\frac{1}{40} + 2.35}{\frac{1}{400}}\\
+  &= 950\\
+  p(\theta | y_1, y_2, y_3, y_4) &= p(\theta | \overline{y}) = N(\theta | \mu_4, \tau_4^2) \\
+  &= N(\theta | 950, 396.03960396)\\
+\end{split}
+$$
 
 \begin{flushright}
   $\blacksquare$
@@ -194,10 +231,50 @@ This comes closest to $\lim_{\beta \rightarrow 0}Gamma(\frac{1}{2}, \beta)$, tho
 
 ## (a) Consider the conjugate Gamma prior. What values of the hyperparameters would lead to a flat (improper) prior distribution for $\theta$?
 
-## (b) Using a general $Gamma(\alpha, \beta)$ prior, derive the posterior distribution for $\theta$. What is the required sufficient statistic needed from the data?
+With a Gamma prior, we have
+
+$$
+\begin{split}
+  p(\theta) &\propto e^{-\beta \theta}\theta^{\alpha - 1}
+\end{split}
+$$
+
+So to get a flat prior out of this, we need the hyperparameters that result in $p(\theta) \propto 1$, so we have
+$$
+\begin{split}
+  p(\theta) &\propto e^{-\beta \theta}\theta^{\alpha - 1}\\
+  &= e^{- 0 \theta} \theta^{1 - 1}\\
+  &= e^{0}\theta^{0}\\
+  &\propto 1\\
+  \theta &\sim Gamma(\alpha = 1, \beta = 0)\\
+\end{split}
+$$
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## \colorbox{yellow}{(b)} Using a general $Gamma(\alpha, \beta)$ prior, derive the posterior distribution for $\theta$. What is the required sufficient statistic needed from the data?
+
+$$
+\begin{split}
+  p(\theta | y) &\propto p(y | \theta) p(\theta)\\
+  &\propto e^{-n \theta} \theta^{\sum y_i} e^{- \beta \theta} \theta^{\alpha - 1}\\
+  &= e^{- [\theta(n + \beta)]} \theta^{\sum y_i} \theta^{\alpha - 1}\\
+  &= e^{- [\theta(n + \beta)]} e^{\sum y_i log(\theta)} e^{log(\theta)(\alpha - 1)}\\
+  &= e^{- [\theta(n + \beta)]} e^{log(\theta) \big( \sum y_i + (\alpha - 1)\big)}  \\
+\end{split}
+$$
+
+\begin{flushright}
+  %$\blacksquare$
+\end{flushright}
+
+\pagebreak
 
 # 5. Derive the gamma posterior distribution (equation 2.15) for the Poisson model parameterized in terms of rate and exposure with conjugate prior distribution.
-
 
 $$
 \begin{split}
@@ -218,13 +295,6 @@ And thus we have the posterior as $\theta | y \sim Gamma(\alpha + \sum_{i = 1}^n
 
 # 6. The table at the end of the assignment gives the number of fatal accidents and deaths on scheduled airline flights per year over a ten year period from 1976 to 1985.
 
-## (a) Assume that the number of fatal accidents in each year are independent with a $Poisson(\theta)$ distribution. Using a flat prior for $\theta$, and the posterior distribution for $\theta$ based on the the 10 years of provided data. If you have a $Gamma(\alpha, \beta)$ distribution then the function \texttt{qgamma(q, shape=a, rate=b)} will return the $q$th quantile of the $Gamma(\alpha, \beta)$ distribution. Use this to find the `symmetric' 95% credible interval for $\theta$.
-
-## (b) Now assume that the number of fatal accidents in each year follow independent Poisson distributions with a constant rate and an exposure in each year proportional to the number of passenger miles flown. Again using a flat prior distribution for $\theta$, determine the posterior distribution based on the data. (Estimate the number of passenger miles flown in each year by dividing the appropriate columns of table and ignoring round-off errors, death rate is per 100 million miles.) Give a 95% predictive interval for the number of fatal accidents in 1986 under the assumption that $8 \times 10^{11}$ passenger miles are flown that year.
-
-## (c) Repeat (a) above, replacing 'fatal accidents' with 'passenger deaths.'
-
-## (d) Repeat (b) above, replacing 'fatal accidents' with 'passenger deaths.'
 
 ```{r}
 years <- c(1976:1985)
@@ -234,8 +304,61 @@ death.rate <- c(0.19, 0.12, 0.15, 0.16, 0.14, 0.06, 0.13, 0.13, 0.03, 0.15)
 
 airline.deaths <- as.data.frame(cbind(years, fatal.accidents, passenger.deaths, death.rate))
 airline.deaths
-
 ```
+
+## (a) Assume that the number of fatal accidents in each year are independent with a $Poisson(\theta)$ distribution. Using a flat prior for $\theta$, find the posterior distribution for $\theta$ based on the the 10 years of provided data. If you have a $Gamma(\alpha, \beta)$ distribution then the function \texttt{qgamma(q, shape=a, rate=b)} will return the $q$th quantile of the $Gamma(\alpha, \beta)$ distribution. Use this to find the `symmetric' 95% credible interval for $\theta$.
+
+Using a flat prior, we have $\theta \sim Gamma(1, 0)$. So our posterior distribution becomes $\theta | y \sim Gamma(1 + \sum_{i = 1}^n y_i, \sum_{i = 1}^n xi)$.
+
+```{r}
+theta.given.y <- qgamma(c(0.025, 0.975), 
+                        shape=(1 + sum(airline.deaths$fatal.accidents)), 
+                        rate=(sum(airline.deaths$death.rate)))
+```
+
+The symmetric 95% credible interval is $(`r theta.given.y[1]`, `r theta.given.y[2]`)$.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (b) Now assume that the number of fatal accidents in each year follow independent Poisson distributions with a constant rate and an exposure in each year proportional to the number of passenger miles flown. Again using a flat prior distribution for $\theta$, determine the posterior distribution based on the data. (Estimate the number of passenger miles flown in each year by dividing the appropriate columns of table and ignoring round-off errors, death rate is per 100 million miles.) Give a 95% predictive interval for the number of fatal accidents in 1986 under the assumption that $8 \times 10^{11}$ passenger miles are flown that year.
+
+```{r}
+miles.flown <- (airline.deaths$passenger.deaths / airline.deaths$death.rate) * 100000000
+miles.flown
+airline.deaths$miles.flown <- miles.flown
+
+exposure <- 1 / 800000000000
+
+theta.given.y <- qgamma(c(0.025, 0.975), 
+                        shape=(1 + exposure), 
+                        rate=(1))
+theta.given.y
+```
+
+
+\pagebreak
+
+
+## (c) Repeat (a) above, replacing 'fatal accidents' with 'passenger deaths.'
+
+```{r}
+theta.given.y <- qgamma(c(0.025, 0.975), 
+                        shape=(1 + sum(airline.deaths$passenger.deaths)), 
+                        rate=(airline.deaths$death.rate))
+```
+
+The symmetric 95% credible interval is $(`r theta.given.y[1]`, `r theta.given.y[2]`)$.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+## (d) Repeat (b) above, replacing 'fatal accidents' with 'passenger deaths.'
+
 
 \begin{flushright}
   $\blacksquare$
