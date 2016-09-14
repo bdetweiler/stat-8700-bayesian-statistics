@@ -256,17 +256,20 @@ $$
 
 \pagebreak
 
-## \colorbox{yellow}{(b)} Using a general $Gamma(\alpha, \beta)$ prior, derive the posterior distribution for $\theta$. What is the required sufficient statistic needed from the data?
+## (b) Using a general $Gamma(\alpha, \beta)$ prior, derive the posterior distribution for $\theta$. What is the required sufficient statistic needed from the data?
 
 $$
 \begin{split}
   p(\theta | y) &\propto p(y | \theta) p(\theta)\\
   &\propto e^{-n \theta} \theta^{\sum y_i} e^{- \beta \theta} \theta^{\alpha - 1}\\
   &= e^{- [\theta(n + \beta)]} \theta^{\sum y_i} \theta^{\alpha - 1}\\
-  &= e^{- [\theta(n + \beta)]} e^{\sum y_i log(\theta)} e^{log(\theta)(\alpha - 1)}\\
-  &= e^{- [\theta(n + \beta)]} e^{log(\theta) \big( \sum y_i + (\alpha - 1)\big)}  \\
+  &= e^{-\theta(n + \beta)} \theta^{n \overline{y} + \alpha - 1}\\
 \end{split}
 $$
+
+So we have $Gamma(\alpha + n\overline{y}, \beta + n)$. 
+
+$n\overline{y}$ is sufficient
 
 \begin{flushright}
   %$\blacksquare$
@@ -331,12 +334,6 @@ miles.flown <- (airline.deaths$passenger.deaths / airline.deaths$death.rate) * 1
 miles.flown
 airline.deaths$miles.flown <- miles.flown
 
-exposure <- 1 / 800000000000
-
-theta.given.y <- qgamma(c(0.025, 0.975), 
-                        shape=(1 + exposure), 
-                        rate=(1))
-theta.given.y
 ```
 
 
