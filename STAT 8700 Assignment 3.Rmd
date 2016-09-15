@@ -269,7 +269,7 @@ $$
 
 So we have $Gamma(\alpha + n\overline{y}, \beta + n)$. 
 
-$n\overline{y}$ is sufficient
+Thus, $n\overline{y}$ is sufficient because it is free of $\theta$.
 
 \begin{flushright}
   %$\blacksquare$
