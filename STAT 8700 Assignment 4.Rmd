@@ -120,18 +120,34 @@ $$
 
 # Replace the uniform prior on $\alpha$ and $\beta$ in the analysis of the bioassay by a bivariate normal prior with $\alpha \sim Normal(0, 4), \beta \sim Normal(10, 100)$, and $corr(\alpha, \beta) = 0.5$. Repeat all the computations and plots discussed in section 3.7 and in class.
 ```{r}
+
+x <- c(-0.86, -0.3, -0.05, 0.73)
+n <- c(5, 5, 5, 5)
+y <- c(0, 1, 3, 5)
+data <- cbind(y, n - y)
+fit <- glm(data ~ x, family = binomial)
+# This is the MLE:
+coef(fit)
+# This is the approximate covariance matrix:
+summary(fit)$cov.unscaled
+
+a <- coef(fit)[[1]]
+b <- coef(fit)[[2]]
+
+plot(a + b*x)
+
 mu <- 0
 sigma_2 <- 4
 
 a <- rnorm(n = 1000, mu, sqrt(sigma_2))
-hist(a, breaks = 90)
+#hist(a, breaks = 90)
 
 mu <- 10
 sigma_2 <- 100
 
 b <- rnorm(n = 1000, mu, sqrt(sigma_2))
-hist(b, breaks = 90)
-plot(a + b*5)
+#hist(b, breaks = 90)
+#plot(a + b*5)
 
 f <- function(u, v) {
   mu_U <- 0
@@ -159,7 +175,7 @@ for (i in 0:100) {
     x <- c(x, f(i, j))
   }
 }
-hist(x, breaks=100)
+#hist(x, breaks=100)
 ```
 
 
