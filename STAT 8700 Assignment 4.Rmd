@@ -8,11 +8,14 @@ header-includes:
   - \usepackage{soul}
   - \usepackage{hyperref}
   
-output: pdf_document
+output: 
+  pdf_document:
+    fig_width: 6
+    fig_height: 4
 ---
 
 ```{r global_options, include=FALSE}
-knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+knitr::opts_chunk$set(fig.align='center', fig.width=12, fig.height=8, fig.path='Figs/',
                       echo=TRUE, warning=FALSE, message=FALSE)
 ```
 
@@ -62,7 +65,9 @@ And thus our joint posterior distributin is $N-Inv-\chi^2(48, 0.355722772278; 10
 
 To simulate this, we first draw $\sigma^2$ from its marginal posterior distribution, $\sigma^2 | y \sim Inv-\chi^2(\nu_n, \sigma_n^2)$
 
-```{r}
+
+
+```{r, fig.width=4, fig.height=4}
 library(geoR)
 
 set.seed(124)
@@ -83,7 +88,7 @@ A 95% credible interval for $\sigma^2$ is (`r lower`, `r upper`).
 
 Then we sample from $N\bigg(\frac{\frac{\kappa_0}{\sigma^2} \mu_0 + \frac{n}{\sigma^2} \overline{y}}{\frac{\kappa_0}{\sigma^2} + \frac{n}{\sigma^2}}, \frac{1}{\frac{\kappa_0}{\sigma^2} + \frac{n}{\sigma^2}} \bigg)$ using the previous values for $\sigma^2$.
 
-```{r}
+```{r, fig.width=4, fig.height=4}
 sigma_2 <- sim
 kappa_0 <- 25
 mu_0 <- 40
@@ -108,6 +113,7 @@ A 95% credible interval for $\mu$ is (`r lower`, `r upper`).
 
 \pagebreak
 
+
 # 2. Two random variables are said to have a bivariate normal distribution with parameters, $\mu_U, \mu_V, \sigma_U^2, \sigma_V^2$, and $\rho$ if they have the following density function:
 
 $$
@@ -119,76 +125,419 @@ $$
 # where $\mu_U$ and $\sigma^2_U$ are the mean and variance of $U$, $\mu_V$ and $\sigma_V^2$ are the mean and variance of $V$, and $\rho$ is the correlation between $U$ and $V$.
 
 # Replace the uniform prior on $\alpha$ and $\beta$ in the analysis of the bioassay by a bivariate normal prior with $\alpha \sim Normal(0, 4), \beta \sim Normal(10, 100)$, and $corr(\alpha, \beta) = 0.5$. Repeat all the computations and plots discussed in section 3.7 and in class.
-```{r}
 
+The book does a quick maximum likelihood of $\alpha$ and $\beta$.
+
+```{r, fig.width=4, fig.height=4}
 x <- c(-0.86, -0.3, -0.05, 0.73)
 n <- c(5, 5, 5, 5)
 y <- c(0, 1, 3, 5)
+y.mod <- c(0.5, 1, 3, 4.5)
+
 data <- cbind(y, n - y)
+
 fit <- glm(data ~ x, family = binomial)
-# This is the MLE:
+
 coef(fit)
+
 # This is the approximate covariance matrix:
 summary(fit)$cov.unscaled
 
 a <- coef(fit)[[1]]
 b <- coef(fit)[[2]]
+```
 
-plot(a + b*x)
+The maximum likelihood estimate for $\alpha$ is `r a` and for $\beta$ is `r b`.
 
-mu <- 0
-sigma_2 <- 4
 
-a <- rnorm(n = 1000, mu, sqrt(sigma_2))
-#hist(a, breaks = 90)
+```{r, fig.width=4, fig.height=4}
 
-mu <- 10
-sigma_2 <- 100
-
-b <- rnorm(n = 1000, mu, sqrt(sigma_2))
-#hist(b, breaks = 90)
-#plot(a + b*5)
-
-f <- function(u, v) {
+bivariate_normal <- function(u, v) {
   mu_U <- 0
   mu_V <- 10
   
   sigma_2_U <- 4
   sigma_2_V <- 100
+  
   sigma_U <- sqrt(sigma_2_U)
   sigma_V <- sqrt(sigma_2_V)
   
   rho <- 0.5
   
-  first <- 1 / (2 * pi * sigma_2_U * sigma_2_V * sqrt(1 - rho^2))
-  second <- exp(-(1/2*(1 - rho^2)) * (((u - mu_U)^2 / sigma_2_U) 
-                + ((v - mu_V)^2 / sigma_2_V) 
-                - (2 * rho * (u - mu_U) * (v - mu_V)) / sqrt(sigma_U) * sqrt(sigma_V)))
+  first <- 1 / (2 * pi * sigma_U * sigma_V * sqrt(1 - rho^2))
+  
+  second <- exp(-(1 / (2 * (1 - rho^2))) 
+                * (  ((u - mu_U)^2 / sigma_2_U) 
+                    + ((v - mu_V)^2 / sigma_2_V) 
+                    - (2 * rho * (u - mu_U) * (v - mu_V)) / (sqrt(sigma_2_U) * sqrt(sigma_2_V))))
   rval <- first * second
   return(rval)
 }
 
-x <- c()
+bioassay <- data.frame(cbind(x, n, y, y.mod))
 
-for (i in 0:100) {
-  for (j in 0:100) {
-    x <- c(x, f(i, j))
-  }
+logit <- function(x) {
+  log(x / (1-x))
 }
-#hist(x, breaks=100)
+ 
+inv_logit <- function(x){
+  exp(x) / (1 + exp(x))
+}
+
+plot(bioassay$x, logit(bioassay$y.mod / bioassay$n))
+
+posterior <- function(a, b) {
+  temp <- 1
+	x <- bioassay$x
+	y <- bioassay$y
+	n <- bioassay$n
+	for (i in 1: length(x)) {
+	  temp <- (temp * (inv_logit(a + (b * x[i]))^y[i]) 
+                  * ((1 - inv_logit(a + (b * x[i])))^(n[i] - y[i])))
+  }
+  
+  bivariate_normal(a, b) * temp
+}
+
+posterior_contour <- function(alpha_min, 
+                              alpha_max, 
+                              grid_size_alpha, 
+                              beta_min, 
+                              beta_max, 
+                              grid_size_beta, 
+                              drawlabels = TRUE) {
+  
+  # Generate a list of alpha values
+  alpha <- seq(alpha_min, alpha_max, length = grid_size_alpha)
+  
+  # Generate a list of beta values
+  beta <- seq(beta_min, beta_max, length = grid_size_beta)
+  
+  # Evaluate the posterior density and all possible combinations of alpha and beta values.  
+  post.dens <- outer(alpha, beta, 'posterior')
+  
+  # Rescale the posterior so values are now relative to height of posterior mode. 
+  scaled.dens <- post.dens / max(post.dens)
+  
+  # Draw contour plot. 
+  contour(alpha,
+          beta,
+          scaled.dens, 
+          levels = c(0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95),
+          xlab="alpha",
+          ylab="beta",
+          drawlabels = drawlabels)
+}
+
+posterior_contour(-100, 100, 2001, -100, 100, 2001)
+posterior_contour(-2, 4, 2001, -5, 25, 2001)
+
+##Sampling from the joint posterior
+
+posterior_sample <- function(alpha_min, 
+                             alpha_max,
+                             grid_size_alpha,
+                             beta_min,
+                             beta_max,
+                             grid_size_beta,
+                             nsim) {
+  
+  # Generate a list of alpha values
+	alpha <- seq(alpha_min, alpha_max, length = grid_size_alpha)
+  
+  # Generate a list of beta values
+	beta <- seq(beta_min, beta_max,length = grid_size_beta)
+  
+  # Evaluate the posterior density and all possible combinations of alpha and beta values.  
+	post.dens <- outer(alpha, beta, 'posterior')
+  
+  # Rescale the posterior so values are now relative to height of posterior mode.
+	scaled.dens <- post.dens / max(post.dens)
+  
+  # Makes sure our discrete probability density sums to 1
+	normalized.dens = scaled.dens / sum(scaled.dens)
+  
+	marg.alpha <- rowSums(normalized.dens)
+  
+	#Sample 'nsim' values of alpha and beta
+  
+  # Define a vector to hold our alpha values
+	sampled.alpha <- NULL
+  
+  #Define a vector to hold out beta values
+	sampled.beta <- NULL
+  
+	alpha_width <- (alpha_max - alpha_min) / (grid_size_alpha - 1)
+  
+	beta_width <- (beta_max-beta_min) / (grid_size_beta - 1)
+	
+  for (i in 1:nsim) {
+    
+    #Generate a value of alpha from the marginal of alpha
+		temp.alpha <- sample(alpha, 1, marg.alpha, replace = TRUE)
+    
+    # Translate the obtained alpha to the appropriate row of our grid
+		j <- ((temp.alpha - alpha_min) / alpha_width) + 1
+    
+    # Calculate the condition distribution of beta, conditional on the obtained value of alpha
+		conditional.beta <- normalized.dens[j, ] / sum(normalized.dens[j, ])
+    
+    # Obtain a beta from the conditional distribution of beta
+		temp.beta <- sample(beta, 1, conditional.beta, replace = TRUE)
+    
+    # Add some noise to try to undiscretize the posterior
+		temp.alpha <- temp.alpha + runif(1, -alpha_width / 2, alpha_width / 2)
+    
+		temp.beta <- temp.beta + runif(1, -beta_width / 2, beta_width / 2)
+    
+    # Add the generated alpha to the list of previously generated alpha
+		sampled.alpha <- c(sampled.alpha, temp.alpha)
+    
+		sampled.beta<-c(sampled.beta, temp.beta)
+  }
+  
+	data.frame(sampled.alpha, sampled.beta)
+}
+
+sims <- posterior_sample(-5, 10, 2001, -10, 40, 2001, 10000)
+
+plot(sims, xlim = c(-5, 10), ylim = c(-10, 40), pch='.')
+
+
+# Posterior Distribution of LD50 # LD50 is the dose at which the death rate is 50%, only makes sense for beta>0.
+LD50 <- (-sims$sampled.alpha[sims$sampled.beta > 0] / sims$sampled.beta[sims$sampled.beta > 0])
+
+hist(LD50, br = 35)
+
+# Posterior Predictive distribution for a dose level x = 0.25, n = 5
+# y~Bin(5,theta)
+# logit(theta) = alpha + beta*x
+theta <- inv_logit(sims$sampled.alpha + (sims$sampled.beta * 0.25))
+y <- rbinom(1000, 5, theta)
+barplot(table(y))
 ```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
 
 
 # 3. Consider the airline fatalities data discussed in the previous exercise. Let us suppose that we now assume that the number of fatal accidents in year $t$ follows a Poisson distribution with mean $\alpha + \beta t$.
 
+```{r, fig.width=4, fig.height=4}
+years <- c(1976:1985)
+fatal.accidents <- c(24, 25, 31, 31, 22, 21, 26, 20, 16, 22)
+passenger.deaths <- c(734, 516, 754, 877, 814, 362, 764, 809, 223, 1066)
+death.rate <- c(0.19, 0.12, 0.15, 0.16, 0.14, 0.06, 0.13, 0.13, 0.03, 0.15)
+
+airline.deaths <- as.data.frame(cbind(years, fatal.accidents, passenger.deaths, death.rate))
+miles.flown <- (airline.deaths$passenger.deaths / airline.deaths$death.rate) * 100000000
+airline.deaths$miles.flown <- miles.flown
+
+airline.deaths
+
+plot(airline.deaths$miles.flown ~ airline.deaths$years)
+abline(lm(airline.deaths$miles.flown ~ airline.deaths$years))
+
+
+```
+
 ## (a) If we let $y_t$ represent the number of fatal accidents in year $t$, write down $p(y_t | \alpha, \beta)$ the likelihood for year $t$ in terms of the parameters $\alpha$, and $\beta$.
+
+$$
+\begin{split}
+  t &\sim Poisson(\alpha + \beta t)\\
+  p(y_t | \alpha, \beta) &= \frac{(\alpha + \beta t)^{y_t}}{y_t!} e^{- (\alpha + \beta t)}\\
+\end{split}
+$$
 
 ## (b) If we assume uniform priors on $\alpha$ and $\beta$, write the posterior density for $(\alpha, \beta)$.
 
+With a uniform prior, we have $p(\alpha, \beta) \propto 1$. So the posterior is proportional to the likelihood.
+
+We scale the years and let $t = 1$ represent 1975, let $t = 2$ represent 1976, and so on.
+
+$$
+\begin{split}
+  p(\alpha, \beta | y) &\propto p(\alpha, \beta) p(y | \alpha, \beta)\\
+  &\propto p(\alpha, \beta) \prod_{i = 1}^{10} p(y_i | \alpha, \beta)\\
+  &\propto \prod_{i = 1}^{10} p(y_i | \alpha, \beta)\\
+  &= \prod_{i = 1}^{10} \frac{(\alpha + \beta t)^{y_t}}{y_t!} e^{-(\alpha + \beta t)}
+\end{split}
+$$
+
 ## (c) Following the same idea as the boassay example (and the previous question) create a grid of possible $\alpha$ and $\beta$ values on which to evaluate the joint posterior and plot the contours. Start with large ranges for $\alpha$ and $\beta$ and refine based on the countour plot. Include all your iterations in your answer, not just you final grid and contour plot.
+
+First, we create our posterior probability density,
+
+```{r, fig.width=4, fig.height=4}
+posterior <- function(a, b) {
+  rval <- 1
+  y <- airline.deaths$fatal.accidents
+	for (t in 1: length(y)) {  
+	  rval <- (rval * dpois(y[t], (a + b*t)))
+  }
+  
+  return(rval)
+}
+```
+
+
+
+```{r, fig.width=4, fig.height=4}
+posterior_contour <- function(alpha_min, 
+                              alpha_max, 
+                              grid_size_alpha, 
+                              beta_min, 
+                              beta_max, 
+                              grid_size_beta, 
+                              drawlabels = TRUE) {
+  
+  # Generate a list of alpha values
+  alpha <- seq(alpha_min, alpha_max, length = grid_size_alpha)
+  
+  # Generate a list of beta values
+  beta <- seq(beta_min, beta_max, length = grid_size_beta)
+  
+  # Evaluate the posterior density and all possible combinations of alpha and beta values.  
+  post.dens <- outer(alpha, beta, 'posterior')
+  
+  # Set NANs to 0
+  post.dens[is.nan(post.dens)] <- 0
+  post.dens[is.na(post.dens)] <- 0
+
+  
+  # Rescale the posterior so values are now relative to height of posterior mode. 
+  scaled.dens <- post.dens / max(post.dens)
+  
+  # Draw contour plot. 
+  contour(alpha,
+          beta,
+          scaled.dens, 
+          levels = c(0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95),
+          xlab="alpha",
+          ylab="beta",
+          drawlabels = drawlabels)
+}
+```
+
+Then plot the contours
+```{r, fig.width=4, fig.height=4}
+posterior_contour(6, 100, 2001, -3, 100, 2001)
+```
+
+We can zoom in further,
+```{r, fig.width=4, fig.height=4}
+posterior_contour(20, 40, 2001, -3, 20, 2001)
+```
+
+And now, we know just about where the ranges are, so we'll zoom in on those,
+```{r, fig.width=4, fig.height=4}
+posterior_contour(15, 40, 2001, -3, 2, 2001)
+```
+
 
 ## (d) Simulate 100,000 values of $\alpha$ and $\beta$ from the joint posterior and plot the histogram of the posterior density of the expected number of fatal accidents in 1986, $\alpha + 1986 \beta$.
 
+```{r, fig.width=4, fig.height=4}
+
+##Sampling from the joint posterior
+
+posterior_sample <- function(alpha_min, 
+                             alpha_max,
+                             grid_size_alpha,
+                             beta_min,
+                             beta_max,
+                             grid_size_beta,
+                             nsim) {
+  
+  # Generate a list of alpha values
+  alpha <- seq(alpha_min, alpha_max, length = grid_size_alpha)
+  
+  # Generate a list of beta values
+	beta <- seq(beta_min, beta_max,length = grid_size_beta)
+  
+  # Evaluate the posterior density and all possible combinations of alpha and beta values.  
+	post.dens <- outer(alpha, beta, 'posterior')
+  # Set NANs to 0
+  post.dens[is.nan(post.dens)] <- 0
+  
+
+  # Rescale the posterior so values are now relative to height of posterior mode.
+  scaled.dens <- post.dens / max(post.dens)
+  
+  # Makes sure our discrete probability density sums to 1
+	normalized.dens = scaled.dens / sum(scaled.dens)
+  
+	marg.alpha<-rowSums(normalized.dens)
+  
+	#Sample 'nsim' values of alpha and beta
+  
+  # Define a vector to hold our alpha values
+	sampled.alpha <- NULL
+  
+  #Define a vector to hold out beta values
+	sampled.beta <- NULL
+  
+	alpha_width <- (alpha_max - alpha_min) / (grid_size_alpha - 1)
+  
+	beta_width <- (beta_max-beta_min) / (grid_size_beta - 1)
+	
+  for (i in 1:nsim) {
+    
+    #Generate a value of alpha from the marginal of alpha
+		temp.alpha <- sample(alpha, 1, marg.alpha, replace = TRUE)
+    
+    # Translate the obtained alpha to the appropriate row of our grid
+		j <- ((temp.alpha - alpha_min) / alpha_width) + 1
+    
+    # Calculate the condition distribution of beta, conditional on the obtained value of alpha
+		conditional.beta <- normalized.dens[j, ] / sum(normalized.dens[j, ])
+    
+    # Obtain a beta from the conditional distribution of beta
+		temp.beta <- sample(beta, 1, conditional.beta, replace = TRUE)
+    
+    # Add some noise to try to undiscretize the posterior
+		temp.alpha <- temp.alpha + runif(1, -alpha_width / 2, alpha_width / 2)
+    
+		temp.beta <- temp.beta + runif(1, -beta_width / 2, beta_width / 2)
+    
+    # Add the generated alpha to the list of previously generated alpha
+		sampled.alpha <- c(sampled.alpha, temp.alpha)
+    
+		sampled.beta<-c(sampled.beta, temp.beta)
+  }
+  
+	data.frame(sampled.alpha, sampled.beta)
+
+}
+
+sims <- posterior_sample(15, 40, 2001, -3, 2, 2001, 100000)
+
+plot(sims, xlim = c(15, 40), ylim = c(-3, 2), pch='.')
+
+```
+
+
 ## (e) Use your simulated values of $\alpha$ and $\beta$ to simulate the number of fatal accidents in 1986. Use your simulations to construct a 95% predictive (credible) interval.
 
+```{r, fig.width=4, fig.height=4}
+
+```
+
+
 ## (f) Return to your simulated values of $\beta$, calculate (well, estimate) $P(\beta < 0)$, that is, the probability that the number of fatal accidents per year is decreasing.
+
+
+```{r, fig.width=4, fig.height=4}
+prob.decreasing <- length(sims$sampled.beta[sims$sampled.beta < 0]) / length(sims$sampled.beta)
+```
+
+There is a `r prob.decreasing * 100`% chance the number of fatal accidents is decreasing.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
