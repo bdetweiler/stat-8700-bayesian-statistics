@@ -364,7 +364,7 @@ $$
   p(\alpha, \beta | y) &\propto p(\alpha, \beta) p(y | \alpha, \beta)\\
   &\propto p(\alpha, \beta) \prod_{i = 1}^{10} p(y_i | \alpha, \beta)\\
   &\propto \prod_{i = 1}^{10} p(y_i | \alpha, \beta)\\
-  &= \prod_{i = 1}^{10} \frac{(\alpha + \beta t)^{y_t}}{y_t!} e^{-(\alpha + \beta t)}
+  &\propto \prod_{i = 1}^{10} (\alpha + \beta t)^{y_t} e^{-(\alpha + \beta t)}
 \end{split}
 $$
 
@@ -372,12 +372,15 @@ $$
 
 First, we create our posterior probability density,
 
-```{r, fig.width=4, fig.height=4}
+```{r}
 posterior <- function(a, b) {
   rval <- 1
   y <- airline.deaths$fatal.accidents
 	for (t in 1: length(y)) {  
-	  rval <- (rval * dpois(y[t], (a + b*t)))
+    # Note: The actual posterior is proportional to ((a + (b * t))^y[t] * exp(-(a + (b * t) ))))
+    # But if we ignore NaNs produced by dpois (extremely large denominators by large factorials), 
+    # we get identical results
+	  rval <- (rval * dpois(y[t], lambda = (a + (b * t))))
   }
   
   return(rval)
@@ -406,9 +409,7 @@ posterior_contour <- function(alpha_min,
   
   # Set NANs to 0
   post.dens[is.nan(post.dens)] <- 0
-  post.dens[is.na(post.dens)] <- 0
 
-  
   # Rescale the posterior so values are now relative to height of posterior mode. 
   scaled.dens <- post.dens / max(post.dens)
   
@@ -435,9 +436,8 @@ posterior_contour(20, 40, 2001, -3, 20, 2001)
 
 And now, we know just about where the ranges are, so we'll zoom in on those,
 ```{r, fig.width=4, fig.height=4}
-posterior_contour(15, 40, 2001, -3, 2, 2001)
+posterior_contour(20, 40, 2001, -3, 1, 2001)
 ```
-
 
 ## (d) Simulate 100,000 values of $\alpha$ and $\beta$ from the joint posterior and plot the histogram of the posterior density of the expected number of fatal accidents in 1986, $\alpha + 1986 \beta$.
 
@@ -469,9 +469,9 @@ posterior_sample <- function(alpha_min,
   scaled.dens <- post.dens / max(post.dens)
   
   # Makes sure our discrete probability density sums to 1
-	normalized.dens = scaled.dens / sum(scaled.dens)
+	normalized.dens <- scaled.dens / sum(scaled.dens)
   
-	marg.alpha<-rowSums(normalized.dens)
+	marg.alpha <- rowSums(normalized.dens)
   
 	#Sample 'nsim' values of alpha and beta
   
@@ -507,7 +507,7 @@ posterior_sample <- function(alpha_min,
     # Add the generated alpha to the list of previously generated alpha
 		sampled.alpha <- c(sampled.alpha, temp.alpha)
     
-		sampled.beta<-c(sampled.beta, temp.beta)
+		sampled.beta <- c(sampled.beta, temp.beta)
   }
   
 	data.frame(sampled.alpha, sampled.beta)
@@ -516,16 +516,21 @@ posterior_sample <- function(alpha_min,
 
 sims <- posterior_sample(15, 40, 2001, -3, 2, 2001, 100000)
 
-plot(sims, xlim = c(15, 40), ylim = c(-3, 2), pch='.')
+# plot(sims, xlim = c(15, 40), ylim = c(-3, 2), pch='.')
+y <- rpois(100000, lambda = (sims$sampled.alpha + sims$sampled.beta * 11))
+plot(table(y))
 
+q025 <- sort(y)[2500]
+q975 <- sort(y)[97500]
+abline(v = q025, col='red')
+abline(v = q975, col='red')
 ```
 
 
 ## (e) Use your simulated values of $\alpha$ and $\beta$ to simulate the number of fatal accidents in 1986. Use your simulations to construct a 95% predictive (credible) interval.
 
-```{r, fig.width=4, fig.height=4}
 
-```
+(`r q025`, `r q975`) is a 95% credible interval for the number of fatal accidents in 1986.
 
 
 ## (f) Return to your simulated values of $\beta$, calculate (well, estimate) $P(\beta < 0)$, that is, the probability that the number of fatal accidents per year is decreasing.
