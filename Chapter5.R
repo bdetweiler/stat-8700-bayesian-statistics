@@ -42,46 +42,85 @@ logdens2 <- outer(u2, v2, log.post2)
 dens2 <- exp(logdens2 - max(logdens2))
 
 # Draw the contours in our defined space u2, v2
-# now we're in alpha, beta space though, so maybe not a great choice of variable names?
 contour(u2, v2, dens2, levels = contours, drawlabels = FALSE)
 
 
-# Refine the grid space
-u2 <- seq(-2.3, -1.3, length = 2001)
-v2 <- seq(1, 5, length = 2001)
+# Do the same steps as above, but refine the grid space
+# Also, I changed the length to 200, because 2001 was slowing my computer to a crawl
+u2 <- seq(-2.3, -1.3, length = 200)
+v2 <- seq(1, 5, length = 200)
 logdens2 <- outer(u2, v2, log.post2)
+# dens2 is a 200x200 matrix of probabilities for the u2, v2 values of alpha and beta
+# For instance, u2[1] = -2.3, and v2[1] = 1. dens2[1, 1] = 1.978023e-14
+# This is equivalent to saying p(alpha = -2.3, beta = 1) = 1.978023e-14
 dens2 <- exp(logdens2 - max(logdens2))
 contour(u2, v2, dens2, levels = contours, drawlabels = FALSE)
 
-nsim<-10000
-dens.u<-apply(dens2,1,sum)
-uindex<-sample(1:length(u2),nsim,replace=T,prob=dens.u)
-sim.u<-u2[uindex]
-sim.v<-rep(NA,nsim)
-for (i in (1:nsim)){
-	sim.v[i]=sample(v2, 1, prob=dens2[uindex[i],])
+# 10,000 simulations
+nsim <- 10000
+# apply the "sum" function to the first dimension of the matrix (rows) - so basically a row sum, which is the 
+# density of the u's
+# Note: I'm not sure why it's not alphas at this point since we're no longer in log space. Little confused here.
+dens.u <- apply(dens2, 1, sum)
+
+# Take 10,000 samples, with replacement, of a number from 1 to 200 with a probability of alpha (u)
+uindex <- sample(1:length(u2), nsim, replace = TRUE, prob = dens.u)
+# Now use those numbers (1 - 200) to pull out values of alpha from the alpha (u) vector
+sim.u <- u2[uindex]
+
+# Create an empty vector 10,000 elements long
+sim.v <- rep(NA, nsim)
+
+# Loop 10,000 times
+for (i in (1:nsim)) {
+  
+  # Sample a beta (v) and store it into sim.v at location i. 
+	sim.v[i] <- sample(v2, 1, prob = dens2[uindex[i], ])
 	
 }
+
+# Overlay points on the contour plot from the simulated alphas and betas (u's and v's)
 points(sim.u, sim.v, col="red", pch='.')
 
-sim.alpha=exp(sim.u+sim.v)/(1+exp(sim.u))
-sim.beta=exp(sim.v)/(1+exp(sim.u))
+# NOTE: I don't see this anywhere in my notes - Definitely confused at this point
+#       Apparently this finally gives us simulated alphas and betas?
+sim.alpha <- exp(sim.u + sim.v) / (1 + exp(sim.u))
+sim.beta <- exp(sim.v) / (1 + exp(sim.u))
 
-theta.sim=matrix(NA, nrow=nsim, ncol=71)
+# Well, at that point, we can simulate thetas
+# Create an empty matrix 10,000x71 to hold the simulated thetas
+theta.sim <- matrix(NA, nrow = nsim, ncol = 71)
 
-for (j in 1:71){
-	theta.sim[,j] = rbeta(nsim, sim.alpha+ratdata$y[j], sim.beta+ratdata$N[j]-ratdata$y[j])
+# Loop 71 times (there are 71 experiments, so we want simulated thetas for each experiment)
+for (j in 1:71) {
+  # Simulate random values from a Beta(alpha + y_j, beta + n_j - y_j) - which is our thetas
+	theta.sim[,j] <- rbeta(nsim, sim.alpha + ratdata$y[j], sim.beta + ratdata$N[j] - ratdata$y[j])
 }
 
-aa=data.frame(obs=ratdata$y/ratdata$N, q025=apply(theta.sim, 2, quantile, 0.025), qm=apply(theta.sim, 2, quantile, 0.5), q975=apply(theta.sim, 2, quantile, 0.975))
+# Build a dataframe with the following variables:
+# obs - observed death to rat proportion (y/N)
+# q025 - Apply the quantile function to the 10,000 columns of theta.sim to get the 0.025th quantile
+# qm - Apply the quantile function to the 10,000 columns of theta.sim to get the median
+# q975 - Apply the quantile function to the 10,000 columns of theta.sim to get the 0.975th quantile
+aa <- data.frame(obs = ratdata$y / ratdata$N, 
+                 q025 = apply(theta.sim, 2, quantile, 0.025), 
+                 qm = apply(theta.sim, 2, quantile, 0.5), 
+                 q975 = apply(theta.sim, 2, quantile, 0.975))
 
-j_obs=jitter(aa$obs, amount=.005)
 
-plot(j_obs , aa$qm, xlim=c(0,0.4), ylim=c(0,0.4), pch=15, cex=0.75)
-abline(a=0,b=1)
+# Add jitter to the (y/N) proportions - jitter is just a visualizing technique so that identical
+# values don't completely obscure each other.
+j_obs = jitter(aa$obs, amount=.005)
+
+# Plot it!
+plot(j_obs , aa$qm, xlim = c(0, 0.4), ylim = c(0, 0.4), pch = 15, cex = 0.75)
+
+# Draw a 45 degree diagonal to show how the thetas have been pulled halfway in between the middle and the diagonal
+abline(a = 0, b = 1)
+
+# Draw the confidence intervals for each theta (this comes from the dataframe where we computed the quantiles)
 for (i in 1:71){
-	lines(c(j_obs[i], j_obs[i]), c(aa$q025[i], aa$q975[i]), col ="grey")
-	
+	lines(c(j_obs[i], j_obs[i]), c(aa$q025[i], aa$q975[i]), col ="grey")	
 }
 
 

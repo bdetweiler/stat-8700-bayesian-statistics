@@ -1,0 +1,270 @@
+---
+title: "STAT 8700 Homework 5"
+author: "Brian Detweiler"
+date: "Friday, September 30, 2016"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: 
+  pdf_document:
+    fig_width: 4
+    fig_height: 4
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.align='center', fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# 1. Consider the data provided in Table 3.3. We are only going to use the data listed in the top section, that is where Type of Street is residential, and Bike Route is Yes.
+
+```{r}
+bikes <- data.frame('y' = c(16, 9, 10, 13, 19, 20, 18, 17, 35, 55),
+                    'other' = c(58, 90, 48, 57, 103, 57, 86, 112, 273, 64))
+bikes$N <- bikes$y + bikes$other
+```
+
+## (a) Set up a model for the data so that, for $j = 1, \hdots, 10$, the observed number of bicycles at location j is binomial with unknown probability $\theta_j$ and sample size equal to the total number of vehicles (bicycles included) at that location. The parameter $\theta_j$ can be interpreted as the underlying or "true"" proportion of traffic at location $j$ that is bicycles. Assign a beta population distribution (prior) for the parameters $\theta_j$ and a noninformative hyperprior distribution as in the rat tumor example of Section 5.3. Follow the rat tumor example, and obtain posterior simulations for the $\theta_j$'s.
+
+```{r}
+log.post2 <- function(u, v, data) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  
+  success <- data$y
+  N <- data$N
+  alpha <- exp(u + v) / (1 + exp(u))
+  beta <- exp(v) / (1 + exp(u))
+  ldens <- 0
+  
+  for(i in 1:length(N)) {
+    ldens <- (ldens
+             + (lgamma(alpha + beta) + lgamma(alpha + success[i]) + lgamma(beta + N[i] - success[i]))
+             - (lgamma(alpha) + lgamma(beta) + lgamma(alpha + beta + N[i])))
+  }
+
+  ldens - 5 / 2 * log(alpha + beta) + log(alpha) + log(beta)
+}
+
+contours <- seq(0.05, 0.95, 0.1)
+u2 <- seq(-2.5, 0, length = 200)
+v2 <- seq(1, 5, length = 200)
+logdens2 <- outer(u2, v2, log.post2, bikes)
+dens2 <- exp(logdens2 - max(logdens2))
+contour(u2, v2, dens2, levels = contours, drawlabels = FALSE)
+nsim <- 100000
+dens.u <- apply(dens2, 1, sum)
+uindex <- sample(1:length(u2), nsim, replace = TRUE, prob = dens.u)
+sim.u <- u2[uindex]
+sim.v <- rep(NA, nsim)
+
+for (i in (1:nsim)) {
+  sim.v[i] <- sample(v2, 1, prob = dens2[uindex[i], ])
+}
+
+points(sim.u, sim.v, col="red", pch='.')
+sim.alpha <- exp(sim.u + sim.v) / (1 + exp(sim.u))
+sim.beta <- exp(sim.v) / (1 + exp(sim.u))
+theta.sim <- matrix(NA, nrow = nsim, ncol = length(bikes$N))
+
+for (j in 1:length(bikes$N)) {
+	theta.sim[,j] <- rbeta(nsim, sim.alpha + bikes$y[j], sim.beta + bikes$N[j] - bikes$y[j])
+}
+
+```
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (b) As in the rat tumor example, compare the posterior distributions of the $\theta_j$'s to the observed proportion of bikes at each location.
+
+```{r}
+aa <- data.frame(obs = bikes$y / bikes$N, 
+                 q025 = apply(theta.sim, 2, quantile, 0.025), 
+                 qm = apply(theta.sim, 2, quantile, 0.5), 
+                 q975 = apply(theta.sim, 2, quantile, 0.975))
+
+j_obs = jitter(aa$obs, amount=.005)
+
+plot(j_obs, aa$qm, xlim = c(0, 0.6), ylim = c(0, 0.6), pch = 15, cex = 0.75, main = 'Simulated Thetas')
+
+abline(a = 0, b = 1)
+
+for (i in 1:length(bikes$N)){
+  lines(c(j_obs[i], j_obs[i]), c(aa$q025[i], aa$q975[i]), col ="grey")	
+}
+```
+
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (c) Suppose we plan to visit an 11th location to observe the traffic. Use the prior distribution to simulate possible values for $\theta_{11}$.
+
+```{r}
+nsim <- 100000
+theta11.sim <- rbeta(nsim, sim.alpha, sim.beta)
+```
+
+$$
+\begin{split}
+  %
+\end{split}
+$$
+ 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (d) Now suppose at the 11th location, 100 vehicles of all kinds go by in one hour of observation, simulate the number of bicycles that pass during that hour, and construct a 95% interval.
+
+```{r}
+# Use the mean of all the N_i's
+N <- 100
+y.sim <- rbinom(n = 100000, size = N, prob = theta11.sim)
+y.sim.sorted <- sort(y.sim)
+q025 <- y.sim.sorted[length(y.sim.sorted) * 0.025]
+q975 <- y.sim.sorted[length(y.sim.sorted) * 0.975]
+hist(y.sim, breaks = 100)
+abline(v = q025, col='red')
+abline(v = q975, col='red')
+```
+
+A 95% credible interval for $y_{11}$ is (`r q025`, `r q975`).
+
+$$
+\begin{split}
+  %
+\end{split}
+$$
+ 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+# 2. Consider the Schools example.
+
+```{r}
+
+#Schools
+
+schooldata.y <- c(28, 8, -3, 7, -1, 1, 18, 12)
+schooldata.sigmaj <- c(15, 10, 16, 11, 9, 11, 10, 18)
+
+mu.hat <- function(tau) {
+  sum ((1 / (schooldata.sigmaj^2 + tau^2)) * (schooldata.y)) / 
+    sum((1/(schooldata.sigmaj^2 + tau^2)))
+}
+
+V.mu.inv <- function(tau) {
+  sum((1 / (schooldata.sigmaj^2 + tau^2)))
+}
+
+post.tau<-function(tau){
+V.mu.inv(tau)^(-(1/2))*prod(((schooldata.sigmaj^2 + tau^2)^(-1/2))*exp(-((schooldata.y - mu.hat(tau))^2)/(2*(schooldata.sigmaj^2 + tau^2))))}
+
+tau<-seq(0.01,30,length=1000)
+post.tau.dens<-apply(as.array(tau),1,FUN="post.tau")
+plot(tau,post.tau.dens,"l")
+
+sim.tau<-sample(tau,200,prob=post.tau.dens,replace=TRUE)
+sim.mu.hat<-apply(as.array(sim.tau),1,FUN="mu.hat")
+sim.Vinv<-apply(as.array(sim.tau),1,FUN="V.mu.inv")
+sim.mu<-rnorm(200,sim.mu.hat,(sim.Vinv)^(-1/2))
+
+v.j<-function(tau){1/((1/schooldata.sigmaj^2)+(1/tau^2))}
+
+theta.hat.j<-function(mu,tau){
+((schooldata.y/schooldata.sigmaj^2)+(mu/(tau^2)))/((1/schooldata.sigmaj^2)+(1/tau^2))}
+
+# Figure 5.6
+plot(tau, theta.hat.j(mu.hat(tau), tau), cex=0.1, col=c("black","red","blue","purple","brown", "darkgreen", "orange","cyan"))
+
+##### Figure 5.7
+plot(tau, sqrt(v.j(tau) + (1/((tau^2/schooldata.sigmaj^2 + 1)^2))*(1/(sapply(tau, V.mu.inv)))), cex=0.1, ylim=c(0,20), col=c("black","red","blue","purple","brown", "darkgreen", "orange","cyan"))
+
+
+sim.vj<-apply(as.array(sim.tau),1,FUN="v.j")
+sim.thetahat.j<-matrix(NA,ncol=8,nrow=length(sim.mu))
+
+for(j in (1:8)){
+for (i in (1:length(sim.mu))){
+sim.thetahat.j[i,j]<-theta.hat.j(sim.mu[i],sim.tau[i])[j]}}
+
+sim.theta<-matrix(NA,ncol=8,nrow=length(sim.mu))
+for(j in (1:8)){
+for (i in (1:length(sim.mu))){
+sim.theta[i,j]<-rnorm(1,sim.thetahat.j[i,j],(sim.vj[i])^(1/2))}}
+```
+
+## (a) If $\tau$ is set to 1 then each school would be estimated separately, and the posterior distribution for $\theta_j$ is simple. Write down the posterior for each of $\theta_1, \hdots, \theta_8$. What is the probability that $\theta_1$ is greater than $\theta_7$.
+
+$$
+\begin{split}
+  %
+\end{split}
+$$
+ 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (b) If $\tau$ is set to 0, then we are assuming that all schools share a common $\theta$, write down the posterior for this common $\theta$.
+
+$$
+\begin{split}
+  %
+\end{split}
+$$
+ 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (c) In R, if we have two vectors s and t and we would like to know what proportion of cases the entry in vector $s$ is greater than the corresponding entry in vector t we can use the following command: \texttt{sum(s > t) / length(s)}. Use this to calcate the posterior probability in the hierarchical model that $\theta_1$ is greater than $\theta_7$.
+
+$$
+\begin{split}
+  %
+\end{split}
+$$
+ 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (d) In \textsf{R}, if we have a matrix $M$ then the command \texttt{table(apply(M, 1, which.max)) / nrow(M)} will calculate the the proportion of rows for which the value in each column is the biggest in the row. Use this to calculate the posterior probability that each school's coaching program is the best of the eight.
+
+$$
+\begin{split}
+  %
+\end{split}
+$$
+ 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
