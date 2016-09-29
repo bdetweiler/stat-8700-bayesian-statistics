@@ -173,21 +173,27 @@ V.mu.inv <- function(tau) {
   sum((1 / (schooldata.sigmaj^2 + tau^2)))
 }
 
-post.tau<-function(tau){
-V.mu.inv(tau)^(-(1/2))*prod(((schooldata.sigmaj^2 + tau^2)^(-1/2))*exp(-((schooldata.y - mu.hat(tau))^2)/(2*(schooldata.sigmaj^2 + tau^2))))}
+post.tau <- function(tau) {
+  V.mu.inv(tau)^(-(1/2)) * 
+    prod(((schooldata.sigmaj^2 + tau^2)^(-1 / 2)) * 
+           exp(-((schooldata.y - mu.hat(tau))^2) / (2*(schooldata.sigmaj^2 + tau^2)))
+        )
+}
 
-tau<-seq(0.01,30,length=1000)
-post.tau.dens<-apply(as.array(tau),1,FUN="post.tau")
-plot(tau,post.tau.dens,"l")
+tau <- seq(0.01, 30, length = 1000)
+post.tau.dens <- apply(as.array(tau), 1, FUN = "post.tau")
+plot(tau, post.tau.dens, "l")
 
-sim.tau<-sample(tau,200,prob=post.tau.dens,replace=TRUE)
-sim.mu.hat<-apply(as.array(sim.tau),1,FUN="mu.hat")
-sim.Vinv<-apply(as.array(sim.tau),1,FUN="V.mu.inv")
-sim.mu<-rnorm(200,sim.mu.hat,(sim.Vinv)^(-1/2))
+sim.tau <- sample(tau, 200, prob = post.tau.dens, replace=TRUE)
+sim.mu.hat <- apply(as.array(sim.tau), 1, FUN = "mu.hat")
+sim.Vinv <- apply(as.array(sim.tau), 1, FUN="V.mu.inv")
+sim.mu <- rnorm(200, sim.mu.hat, (sim.Vinv)^(-1/2))
 
-v.j<-function(tau){1/((1/schooldata.sigmaj^2)+(1/tau^2))}
+v.j <- function(tau) {
+  1 / ((1 / schooldata.sigmaj^2) + (1 / tau^2))
+}
 
-theta.hat.j<-function(mu,tau){
+theta.hat.j <- function(mu,tau){
 ((schooldata.y/schooldata.sigmaj^2)+(mu/(tau^2)))/((1/schooldata.sigmaj^2)+(1/tau^2))}
 
 # Figure 5.6
