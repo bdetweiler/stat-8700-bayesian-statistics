@@ -1,0 +1,322 @@
+---
+title: "STAT 8700 Homework 5"
+author: "Brian Detweiler"
+date: "Friday, September 30, 2016"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: 
+  pdf_document:
+    fig_width: 4
+    fig_height: 4
+---
+
+```{r global_options, include=FALSE}
+set.seed(12321)
+knitr::opts_chunk$set(fig.align='center', fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# 1. For the Schools data, check the model using the test statistic $T(y) = max_j y_j - min_j y_j$, the range. Calculate the p-value for this posterior predictive check.
+
+
+```{r echo=FALSE, warning=FALSE}
+schooldata.y <- c(28, 8, -3, 7, -1, 1, 18, 12)
+schooldata.sigmaj <- c(15, 10, 16, 11, 9, 11, 10, 18)
+
+mu.hat <- function(tau) {
+  sum ((1 / (schooldata.sigmaj^2 + tau^2)) * (schooldata.y)) / 
+    sum((1/(schooldata.sigmaj^2 + tau^2)))
+}
+
+V.mu.inv <- function(tau) {
+  sum((1 / (schooldata.sigmaj^2 + tau^2)))
+}
+
+# p(tau | y)
+post.tau <- function(tau) {
+  V.mu.inv(tau)^(-(1 / 2)) * 
+    prod(((schooldata.sigmaj^2 + tau^2)^(-1 / 2)) * 
+           exp(-((schooldata.y - mu.hat(tau))^2) / (2 * (schooldata.sigmaj^2 + tau^2)))
+        )
+}
+
+# Simulate a bunch of tau's using the post.tau() function
+tau <- seq(0.01, 30, length = 1000)
+post.tau.dens <- apply(as.array(tau), 1, FUN = "post.tau")
+
+# The plot looks like a slide, so smaller taus are more likely
+#plot(tau, post.tau.dens, "l")
+
+# Now take 200 samples with replacement from the taus, using the tau posterior density
+sim.tau <- sample(tau, 200, prob = post.tau.dens, replace = TRUE)
+# Now we can simulate mu.hat and V.mu.inv 
+sim.mu.hat <- apply(as.array(sim.tau), 1, FUN = "mu.hat")
+sim.Vinv <- apply(as.array(sim.tau), 1, FUN="V.mu.inv")
+sim.mu <- rnorm(200, sim.mu.hat, (sim.Vinv)^(-1/2))
+
+v.j <- function(tau) {
+  1 / ((1 / schooldata.sigmaj^2) + (1 / tau^2))
+}
+
+theta.hat.j <- function(mu, tau) {
+  ((schooldata.y / schooldata.sigmaj^2) + (mu / (tau^2))) / 
+    ((1 / schooldata.sigmaj^2) + (1 / tau^2))
+}
+
+# Figure 5.6
+#plot(tau, 
+#     theta.hat.j(mu.hat(tau), tau), 
+#     cex = 0.1, 
+#     col = c("black",
+#             "red",
+#             "blue",
+#             "purple",
+#             "brown",
+#             "darkgreen",
+#             "orange",
+#             "cyan"))
+
+##### Figure 5.7
+#plot(tau, 
+#     sqrt(v.j(tau) + 
+#          (1 / ((tau^2 / schooldata.sigmaj^2 + 1)^2)) * 
+#          (1 / (sapply(tau, V.mu.inv)))), 
+#     cex = 0.1, 
+#     ylim = c(0, 20),
+#     col = c("black",
+#             "red",
+#             "blue",
+#             "purple",
+#             "brown",
+#             "darkgreen",
+#             "orange",
+#             "cyan"))
+
+
+sim.vj <- apply(as.array(sim.tau), 1, FUN = "v.j")
+sim.thetahat.j <- matrix(NA, ncol = 8, nrow = length(sim.mu))
+
+for (j in (1:8)) {
+  for (i in (1:length(sim.mu))) {
+    sim.thetahat.j[i, j] <- theta.hat.j(sim.mu[i], sim.tau[i])[j]
+  }
+}
+
+sim.theta <- matrix(NA, ncol = 8, nrow = length(sim.mu))
+for (j in (1:8)) {
+  for (i in (1:length(sim.mu))) {
+    sim.theta[i, j] <- rnorm(1, sim.thetahat.j[i, j], (sim.vj[i])^(1 / 2))
+  }
+}
+
+
+#Schools example from Chapter 5, make sure you run the Chapter 5 code first to obtain the 200 simulated values for each of the 8 thetas. These are stored in sim.theta
+
+#Use the posterior predictive distribution to simulate new y values for each school (repeated 200 times)
+#yrep <- rnorm(8 * 200, sim.theta, schooldata.sigmaj)
+#yrep <- matrix(yrep, 200, 8)
+
+#T_max <- apply(yrep, 1, max)
+#T_min <- apply(yrep, 1, min)
+#T_mean <- apply(yrep, 1, mean)
+#T_sd <- apply(yrep, 1, sd)
+
+#par(mfrow <- c(2, 2))
+
+#hist(T_max)
+#abline(v = max(schooldata.y), col = "red")
+#1 - sum(T_max < max(schooldata.y)) / 200
+
+#hist(T_min)
+#abline(v = min(schooldata.y), col = "red")
+#1 - sum(T_min < min(schooldata.y)) / 200
+
+#hist(T_mean)
+#abline(v = mean(schooldata.y), col = "red")
+#1 - sum(T_mean < mean(schooldata.y)) / 200
+
+#hist(T_sd)
+#abline(v = sd(schooldata.y), col = "red")
+#1 - sum(T_sd < sd(schooldata.y)) / 200
+
+
+```
+
+
+```{r fig.width=4, fig.height=4}
+yrep <- rnorm(8 * 200, sim.theta, schooldata.sigmaj)
+yrep <- matrix(yrep, 200, 8)
+
+diff.range <- function(row) {
+  return(diff(range(row)))
+}
+
+T_range <- apply(yrep, 1, diff.range)
+p.val <- 1 - sum(T_range < diff(range(schooldata.y))) / 200
+hist(T_range)
+abline(v = diff(range(schooldata.y)), col = "red")
+```
+
+This produces a p-value of `r p.val`, which is well within the observed data.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+# 2. Read through the model for Football Points Spreads in Section 1.6. The model de-scribed in chapter 1 is of the form $y \sim Normal(x, 14^2)$ implying that $y - x \sim Normal(0, 14^2)$, however figure 1.2a seems to show a pattern of decreasing variance of $y - x$ as a function of $x$. The data can be found in football.txt on Blackboard, and can be read into \textsf{R} using \texttt{read.table("football.txt", header=T)}.
+
+```{r echo=FALSE, warning=FALSE}
+library(ggplot2)
+```
+
+```{r}
+football.data <- read.table('football.txt', header=T)
+football.data$outcome <- football.data$favorite - football.data$underdog
+football.data$outcome.minus.pointspread <- football.data$outcome - football.data$spread
+head(football.data)
+```
+
+```{r, fig.width=5, fig.height=4, echo=FALSE}
+plot(x = jitter(football.data$spread[1:672], factor=1), 
+     y = jitter(football.data$outcome[1:672], factor=1), 
+     pch = 15, 
+     cex = 0.5, 
+     xlab='point spread', 
+     ylab = 'outcome')
+
+plot(x = jitter(football.data$spread[1:672], factor=1), 
+     y = jitter(football.data$outcome.minus.pointspread[1:672], factor=1), 
+     pch = 15, 
+     cex = 0.5, 
+     xlab='point spread', 
+     ylab = 'outcome - point spread')
+
+hist(football.data$outcome.minus.pointspread[1:672], 
+     breaks=50, 
+     freq=F, 
+     xlab="outcome - point spread",
+     ylab = '',
+     main = NA)
+x <- seq(-100,100, length=1000001)
+lines(x, dnorm(x,0,14))  #Figure 1.2(b)
+```
+\pagebreak
+
+## (a) Simulate several replicated data sets $y^{rep}$ under the model and, for each, create graphs like Figurers 1.1 and 1.2. Display several graphs per page, and compare these to the corresponding graphs of the actual data. This is a graphical posterior predictive check as described in Section 6.4
+
+```{r fig.height=6, fig.width=6}
+require(cowplot)
+
+
+# Simulate y's using the data from the x's
+xrep <- football.data$spread
+yrep <- rnorm(length(xrep), xrep, 14)
+
+df.list <- vector("list", 10)
+
+for (i in 1:10) {
+  
+  from <- ((i - 1) * 224) + 1
+  
+  to <- i * 224
+  
+  dens <- rnorm(n = 224, 0, 14)
+  df.list[[i]] <- as.data.frame(cbind(xrep[from:to], 
+                                      yrep[from:to], 
+                                      yrep[from:to] - xrep[from:to],
+                                      dens), 
+                                row.names = c(1:224))
+  colnames(df.list[[i]]) <- c('spread', 'outcome', 'outcome.minus.spread', 'density')
+}
+
+plot11.list <- vector("list", 10)
+for (i in 1:10) {
+  plot11.list[[i]] <- ggplot(df.list[[i]], aes(spread, outcome)) + 
+                        geom_point(size = 1) + 
+                        labs(x = 'spread', 
+                             y = 'outcome')
+}
+
+plot_grid(plotlist = plot11.list)
+
+plot12a.list <- vector("list", 10)
+for (i in 1:10) {
+  plot12a.list[[i]] <- ggplot(df.list[[i]], aes(spread, outcome.minus.spread)) + 
+                        geom_point(size = 1) + 
+                        labs(x = 'spread', 
+                             y = 'outcome - sprd')
+}
+
+plot_grid(plotlist = plot12a.list)
+
+plot12b.list <- vector("list", 10)
+for (i in 1:10) {
+  plot12b.list[[i]] <- ggplot(df.list[[i]], aes(x = outcome.minus.spread)) + 
+                          geom_histogram(aes(y =..density..), 
+                                         breaks = seq(-40, 40, by = 2), 
+                                         col = "black", 
+                                         alpha = .2) +
+                          geom_density(aes(x = dens),
+                                       col = "red") +
+                          labs(x = 'outc - sprd')
+}
+
+plot_grid(plotlist = plot12b.list)
+
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+
+## (b) Create a numerical summary $T(x, y)$ to capture the apparent decrease in variance of $y - x$ as a function of $x$. Compare this to the distribution of simulated test statistics, $T(x, y^{rep})$ and compute the p-value for this posterior predictive check.
+
+The test statistic will compute the variance of two halves of the data. We will split the data along the median of the point spreads of the original data, which is `r median(football.data$spread)`. Then we subtract the lower from the upper. If the variance is generally decreasing with a larger point spread, we should see a positive mean.
+
+```{r}
+T_var <- function(data) {
+  lower <- data$outcome.minus.pointspread[data$spread <= 4.5]
+  upper <- data$outcome.minus.pointspread[data$spread > 4.5]
+  T_var <- var(lower) - var(upper)
+}
+
+xrep <- football.data$spread
+
+temp <- football.data
+
+T_vars <- c()
+
+# 1000 simulations of outcomes given point spreads
+for(i in 1:1000) {
+  yrep <- rnorm(length(xrep), xrep, 14)
+  temp$outcome <- yrep
+  temp$outcome.minus.pointspread <- yrep - xrep
+  T_vars <- c(T_vars, T_var(temp))
+}
+
+original.T_var <- T_var(football.data)
+
+hist(T_vars, breaks=99)
+abline(v = mean(T_vars), col = 'red')
+abline(v = T_var(football.data), col = 'blue')
+p.val <- 1 - sum(T_vars < original.T_var) / 1000
+```
+
+The mean of the simulations is `r mean(T_vars)` (plotted in red). This is closer to normal, which we might expect having used a normal with mean 0. The original $T_{var}$ value for the data is `r original.T_var`. This is plotted in blue.
+
+The p-value is `r p.val`, which is still within our acceptable range, but as the book says, this model is not perfect.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
