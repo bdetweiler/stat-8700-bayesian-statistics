@@ -1,0 +1,198 @@
+---
+title: "STAT 8700 Homework 7"
+author: "Brian Detweiler"
+date: "Friday, October 14, 2016"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: 
+  pdf_document:
+    fig_width: 4
+    fig_height: 4
+---
+
+```{r global_options, include=FALSE}
+set.seed(123)
+knitr::opts_chunk$set(fig.align='center', fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# 1.  Suppose our target distribution $p(\theta | y)$ is a standard Normal, and we choose $g(\theta)$ to be a t-distribution with 3 degrees of freedom.
+
+## (a) Draw a sample of size $S = 100$ from $g(\theta)$ and compute the importance ratios. Plot a histogram of the log importance ratios.
+
+```{r}
+S <- 100
+df <- 3
+theta <- rt(S, df)
+
+w <- dnorm(theta, 0, 1) / dt(theta, df = df)
+
+hist(log(w), breaks = S, xlim = c(-25, 1))
+```
+## (b) Estimate $E[\theta|y]$ and $Var(\theta | y)$ using importance sampling. Compare to the true values.
+
+```{r}
+theta.expected <- sum(theta * w) / sum(w)
+theta.variance <- sum(((theta - theta.expected)^2) * w) / sum(w)
+```
+
+$$
+\begin{split}
+  E[\theta | y] &= `r theta.expected` \\
+  Var(\theta | y) &= `r theta.variance` \\
+\end{split}
+$$
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (c) Repeat the first two parts of the question using $S = 10000$.
+
+```{r}
+S <- 10000
+df <- 3
+theta <- rt(S, df)
+
+w <- dnorm(theta, 0, 1) / dt(theta, df = df)
+
+hist(log(w), breaks = S, xlim = c(-25, 1))
+```
+
+```{r}
+theta.expected <- sum(theta * w) / sum(w)
+theta.variance <- sum(((theta - theta.expected)^2) * w) / sum(w)
+```
+
+$$
+\begin{split}
+  E[\theta | y] &= `r theta.expected` \\
+  Var(\theta | y) &= `r theta.variance` \\
+\end{split}
+$$
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+
+## (d) Using the sample obtained in the previous part, compute an estimate of the effective sample size.
+
+```{r}
+w_tilde <- w / sum(w)
+Seff <- 1 / sum(w_tilde^2)
+```
+
+The effective sample size is `r Seff`. 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+
+# 2. Repeat Question 1, swapping the distributions used for $p(\theta|y)$ and $g(\theta)$.
+
+
+
+## (a) Draw a sample of size $S = 100$ from $g(\theta)$ and compute the importance ratios. Plot a histogram of the log importance ratios.
+
+```{r}
+S <- 100
+df <- 3
+theta <- rnorm(S, 0, 1)
+
+w <- dt(theta, df = df) / dnorm(theta, 0, 1) 
+
+hist(log(w), breaks = S, xlim = c(-5, 5))
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+
+## (b) Estimate $E[\theta|y]$ and $Var(\theta | y)$ using importance sampling. Compare to the true values.
+
+```{r}
+theta.expected <- sum(theta * w) / sum(w)
+theta.variance <- sum(((theta - theta.expected)^2) * w) / sum(w)
+```
+
+$$
+\begin{split}
+  E[\theta | y] &= `r theta.expected` \\
+  Var(\theta | y) &= `r theta.variance` \\
+\end{split}
+$$
+
+The true mean and variance are $\mu = 0$ and $\sigma^2 = 1$. The estimates are off by `r abs(theta.expected)` and `r 1 - theta.variance`, respectively, which are reasonably close.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (c) Repeat the first two parts of the question using $S = 10000$.
+
+```{r}
+S <- 10000
+df <- 3
+theta <- rnorm(S, 0, 1)
+
+w <- dt(theta, df = df) / dnorm(theta, 0, 1) 
+
+hist(log(w), breaks = S, xlim = c(-5, 5))
+
+theta.expected <- sum(theta * w) / sum(w)
+theta.variance <- sum(((theta - theta.expected)^2) * w) / sum(w)
+```
+
+$$
+\begin{split}
+  E[\theta | y] &= `r theta.expected` \\
+  Var(\theta | y) &= `r theta.variance` \\
+\end{split}
+$$
+
+The true mean and variance are $\mu = 0$ and $\sigma^2 = 1$. The estimates are off by `r abs(theta.expected)` and `r 1 - theta.variance`, respectively, which are reasonably close.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+## (d) Using the sample obtained in the previous part, compute an estimate of the effective sample size.
+
+```{r}
+w_tilde <- w / sum(w)
+Seff <- 1 / sum(w_tilde^2)
+```
+
+The effective sample size is `r Seff`. 
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
+
+# 3. Use the Metropolis algorithm to obtain simulated values of \textit{alpha} and \textit{beta} from the Bioassay example in Section 3.7. Be sure to define your starting points and your jumping rule. Compute with log-densities (see page 261). Run your simulations long enough for approximate convergence. Include a plot of the last 25\% of your simulated values overlaying the contour plot.
+
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
