@@ -40,32 +40,50 @@ sum(sim[,1]-sim[,2]>0)/100000
 #Bioassay
 
 # Store Data
-bioassay<-data.frame(cbind(x=c(-0.86,-0.30,-0.05,0.73),n=c(5,5,5,5),y=c(0,1,3,5),y.mod=c(0.5,1,3,4.5)))
+bioassay <- data.frame(cbind(x = c(-0.86, -0.30, -0.05, 0.73),
+                             n = c(5, 5, 5, 5),
+                             y = c(0, 1, 3, 5),
+                             y.mod = c(0.5, 1, 3, 4.5)))
 
 
-logit<-function(x){
-log(x/(1-x))}
+logit <- function(x) {
+  log(x / (1 - x))
+}
  
-inv_logit<-function(x){
-(exp(x))/(1 + exp(x))}
+inv_logit <- function(x) {
+  (exp(x)) / (1 + exp(x))
+}
 
-posterior<-function(a,b){
-	temp=1
-	x=bioassay$x
-	y=bioassay$y
-	n=bioassay$n
-	for (i in 1: length(x)){
-	temp=temp*(inv_logit(a+(b*x[i]))^y[i])*((1-inv_logit(a + (b*x[i])))^(n[i] - y[i]))}
+posterior <- function(a, b) {
+	temp <- 1
+	x <- bioassay$x
+	y <- bioassay$y
+	n <- bioassay$n
+	for (i in 1: length(x)) {
+	  temp <- temp * (inv_logit(a + (b * x[i]))^y[i]) * ((1 - inv_logit(a + (b * x[i])))^(n[i] - y[i]))
+  }
 	temp
 }
 
 
-posterior_contour=function(alpha_min, alpha_max, grid_size_alpha, beta_min, beta_max, grid_size_beta, drawlabels=TRUE){
-alpha<-seq(alpha_min,alpha_max,length=grid_size_alpha) # Generate a list of alpha values
-beta<-seq(beta_min,beta_max,length=grid_size_beta) # Generate a list of beta values
-post.dens<-outer(alpha,beta,"posterior") # Evaluate the posterior density and all possible combinations of alpha and beta values.  
-scaled.dens<-post.dens / max(post.dens) # Rescale the posterior so values are now relative to height of posterior mode. 
-contour(alpha,beta,scaled.dens,levels=c(0.05,0.15,0.25,0.35,0.45,0.55,0.65,0.75,0.85,0.95), xlab="alpha", ylab="beta", drawlabels=drawlabels) # Draw contour plot. 
+posterior_contour <- function(alpha_min, 
+                              alpha_max, 
+                              grid_size_alpha, 
+                              beta_min, 
+                              beta_max, 
+                              grid_size_beta, 
+                              drawlabels = TRUE) {
+  alpha <- seq(alpha_min, alpha_max, length = grid_size_alpha) # Generate a list of alpha values
+  beta <- seq(beta_min, beta_max, length = grid_size_beta) # Generate a list of beta values
+  post.dens <- outer(alpha, beta, "posterior") # Evaluate the posterior density and all possible combinations of alpha and beta values.  
+  scaled.dens <- post.dens / max(post.dens) # Rescale the posterior so values are now relative to height of posterior mode. 
+  contour(alpha,
+          beta,
+          scaled.dens,
+          levels = c(0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95),
+          xlab = "alpha", 
+          ylab = "beta",
+          drawlabels = drawlabels) # Draw contour plot. 
 }
 
 posterior_contour(-100, 100, 2001, -100, 100, 2001)

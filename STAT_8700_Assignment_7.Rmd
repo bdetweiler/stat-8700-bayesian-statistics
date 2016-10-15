@@ -284,10 +284,6 @@ points(theta2, col = "blue")
 points(theta3, col = "green")
 points(theta4, col = "gray")
 
-inv_logit <- function(x) {
-  (exp(x)) / (1 + exp(x))
-}
-
 proposal <- posterior
 
 for (i in 1:iterations) {
@@ -298,10 +294,10 @@ for (i in 1:iterations) {
   #require(mvtnorm)
   
   # Sample a proposal value theta* 
-  thetastar1 <- rmvnorm(n = 1, theta1[i,], 0.4 * Sigma)
-  thetastar2 <- rmvnorm(n = 1, theta2[i,], 0.4 * Sigma)
-  thetastar3 <- rmvnorm(n = 1, theta3[i,], 0.4 * Sigma)
-  thetastar4 <- rmvnorm(n = 1, theta4[i,], 0.4 * Sigma)
+  thetastar1 <- rmvnorm(n = 1, theta1[i,], 0.6 * Sigma)
+  thetastar2 <- rmvnorm(n = 1, theta2[i,], 0.6 * Sigma)
+  thetastar3 <- rmvnorm(n = 1, theta3[i,], 0.6 * Sigma)
+  thetastar4 <- rmvnorm(n = 1, theta4[i,], 0.6 * Sigma)
 
   tau1 <- ((proposal(thetastar1[1,1], thetastar1[1,2])) / (proposal(theta1[i,1], theta1[i,2])))
   tau2 <- ((proposal(thetastar2[1,1], thetastar2[1,2])) / (proposal(theta2[i,1], theta2[i,2])))
@@ -337,10 +333,10 @@ for (i in 1:iterations) {
     theta4[i + 1,] <- theta4[i,]
   }
 
-  # lines(theta1, col = "red")
-# lines(theta2, col = "blue")
-# lines(theta3, col = "green")
-# lines(theta4, col = "gray")
+  #lines(theta1, col = "red")
+  #lines(theta2, col = "blue")
+  #lines(theta3, col = "green")
+  #lines(theta4, col = "gray")
 }
 
 conv1 <- matrix(NA, iterations / 4, 2)
@@ -355,10 +351,10 @@ for (j in 1:(iterations / 4)) {
   conv4[j, ] <- theta4[(3 * iterations / 4) + 1 + j, ]
 }
 
-apply(conv1, 2, "mean")
-apply(conv2, 2, "mean")
-apply(conv3, 2, "mean")
-apply(conv4, 2, "mean")
+# apply(conv1, 2, "mean")
+# apply(conv2, 2, "mean")
+# apply(conv3, 2, "mean")
+# apply(conv4, 2, "mean")
 
 #plot(conv1, xlim=c(-2.5, 4), ylim=c(-2.5, 25),col="red")
 
