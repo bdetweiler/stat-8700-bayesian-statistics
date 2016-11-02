@@ -1,0 +1,12 @@
+model {
+    for(i in 1:N) {
+    schoolmean[i] ~ dnorm(mu,itau)
+    thes[i] <- 1/pow(sigma[i],2)
+    schoolobs[i] ~ dnorm(schoolmean[i],thes[i])
+    }
+ 
+  mu ~ dnorm(0,alpha)
+  alpha <- .01
+  itau   ~ dgamma(1e-3,pow(15,2)*1e-3)
+  tau <- pow(1/itau,1/2)
+}
