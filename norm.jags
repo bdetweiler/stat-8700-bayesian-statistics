@@ -1,0 +1,14 @@
+
+  model{
+  
+    sigma1_2 = pow(400, 2)
+    tau1 = 1 / sigma1_2
+  	for (i in 1:N){
+  		y[i] ~ dnorm(theta, tau1) # Likelihood
+  	}
+  
+    sigma2_2 = pow(200, 2)
+    tau2 = 1 / sigma2_2
+  	theta ~ dnorm(1000, tau2) # Prior
+  }
+

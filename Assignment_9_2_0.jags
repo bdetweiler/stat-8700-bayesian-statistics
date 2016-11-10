@@ -1,0 +1,24 @@
+
+model {
+
+  for (i in 1:N) {
+    line[i] <- alpha + (beta * x[i])
+    p[i] <- ilogit(line[i])
+    y[i] ~ dbin(p[i], n[i])
+  }
+
+  # 9.2 d.)
+  px <- alpha + (beta * -0.2)
+  y_pred ~ dbin(ilogit(px), 20)
+
+  alpha ~ dunif(-5, 10)    # Prior
+  beta ~ dunif(-10, 40)    # Prior
+
+  # Question 9.2 b.)
+  # This will contain the percentage of alphas and betas > 0
+  beta0 <- step(beta)
+  alpha0 <- step(alpha)
+
+  ld50 <- -alpha / beta
+}
+

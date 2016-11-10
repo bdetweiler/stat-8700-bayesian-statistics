@@ -1,7 +1,7 @@
 ---
-title: "STAT 8700 Homework 3"
+title: "STAT 8700 Homework 8"
 author: "Brian Detweiler"
-date: "Friday, September 16, 2016"
+date: "Friday, November 4th, 2016"
 header-includes:
   - \usepackage{color}
   - \usepackage{xcolor}
@@ -136,6 +136,11 @@ This gives us a 95% Credible Interval of (0.000032978457959, 0.161514323478).
 \pagebreak
 
 
+
+
+
+
+
 ## 2. The \texttt{normnp} function in the \texttt{Bolstad} package computes the posterior for the mean with a Normal prior. The function requires 4 inputs (in order): a vector containing the data, the prior mean, the prior standard deviation, and the population standard deviation. Suppose we consider a Normal population with a variance of 16, and we collect 15 observations from this population with values: 26.8, 26.3, 28.3, 28.5, 26.3, 31.9, 28.5, 27.2, 20.9, 27.5, 28.0, 18.6, 22.3, 25.0, 31.5.
 
 ```{r}
@@ -171,132 +176,7 @@ A 95% credible interval for the population mean is found at the 0.025 and 0.975 
 
 \pagebreak
 
-# 3. Suppose $y|\theta \sim Poisson(\theta)$, find the Jeffreys' prior density for $\theta$. Find $\alpha$ and $\beta$ for which the $Gamma(\alpha, \beta)$ density is a close match to the Jeffreys' prior.
-
-
-Jeffrey's prior is given by $J(\theta) = \sqrt{I(\theta)}$, where $I(\theta) = -E\bigg[ \frac{\partial^2}{\partial \theta^2} \ln{p(y | \theta)} \bigg]$.
-
-The Poisson distribution we are interested in, is $p(y_n | \theta) = \theta^{\sum_{i = 1}^{n} y_i} e^{- n \theta} \prod_{i = 1}^n \frac{1}{y_i!} $. 
-
-So working through this by parts, we start with the natural log,
-$$
-\begin{split}
-  \ln{\theta^{\sum_{i = 1}^{n} y_i} e^{- n \theta} \prod_{i = 1}^n \frac{1}{y!}} &= \ln{\frac{1}{y!}} - \theta + y \ln{\theta}\\
-  &= \sum_{i = 1}^n y_i \ln{\theta} - n \theta - \ln{\sum_{i = 1}^n y_i !}\\
-\end{split}
-$$
-
-Taking the first derivative with respect to $\theta$, we get
-$$
-\begin{split}
-  \frac{\partial}{\partial \theta} \ln{p(y_n | \theta)} &= \frac{\partial}{\partial \theta} \sum_{i = 1}^n y_i \ln{\theta} - n \theta - \ln{\sum_{i = 1}^n y_i !}\\
-  &= \sum_{i = 1}^n \frac{y_i}{\theta} - n - 0\\
-\end{split}
-$$
-
-Taking the second derivative with respect to $\theta$, we get
-$$
-\begin{split}
-  \frac{\partial^2}{\partial \theta^2} \ln{p(y_n | \theta)} &= \frac{\partial}{\partial \theta} \sum_{i = 1}^n \frac{y_i}{\theta} \\
-  &= -\sum_{i = 1}^n y_i \frac{1}{\theta^2}\\
-\end{split}
-$$
-
-Taking expectations,
-$$
-\begin{split}
-  -E\bigg[- \frac{y}{\theta^2}\bigg | \theta \bigg] &= \frac{n \theta}{\theta^2} \\
-  &= \frac{n}{\theta}\\
-\end{split}
-$$
-
-Finally, taking the square root to get the Jeffrey's prior, $J(I)$, we have
-$$
-\begin{split}
-  \sqrt{I(\theta)} &= \sqrt{\frac{n}{\theta}}\\
-  &\propto \sqrt{\frac{1}{\theta}}\\
-  &= \theta^{\frac{1}{2}}\\
-\end{split}
-$$
-
-This comes closest to $\lim_{\beta \rightarrow 0}Gamma(\frac{1}{2}, \beta)$, though it is not a proper distribution. 
-
-\begin{flushright}
-  $\blacksquare$
-\end{flushright}
-
-\pagebreak
-
-# 4. Suppose we have multiple independent observations $y_1, y_2, \hdots, y_n$ from a $Poisson(\theta)$ distribution.
-
-## (a) Consider the conjugate Gamma prior. What values of the hyperparameters would lead to a flat (improper) prior distribution for $\theta$?
-
-With a Gamma prior, we have
-
-$$
-\begin{split}
-  p(\theta) &\propto e^{-\beta \theta}\theta^{\alpha - 1}
-\end{split}
-$$
-
-So to get a flat prior out of this, we need the hyperparameters that result in $p(\theta) \propto 1$, so we have
-$$
-\begin{split}
-  p(\theta) &\propto e^{-\beta \theta}\theta^{\alpha - 1}\\
-  &= e^{- 0 \theta} \theta^{1 - 1}\\
-  &= e^{0}\theta^{0}\\
-  &\propto 1\\
-  \theta &\sim Gamma(\alpha = 1, \beta = 0)\\
-\end{split}
-$$
-
-\begin{flushright}
-  $\blacksquare$
-\end{flushright}
-
-\pagebreak
-
-## (b) Using a general $Gamma(\alpha, \beta)$ prior, derive the posterior distribution for $\theta$. What is the required sufficient statistic needed from the data?
-
-$$
-\begin{split}
-  p(\theta | y) &\propto p(y | \theta) p(\theta)\\
-  &\propto e^{-n \theta} \theta^{\sum y_i} e^{- \beta \theta} \theta^{\alpha - 1}\\
-  &= e^{- [\theta(n + \beta)]} \theta^{\sum y_i} \theta^{\alpha - 1}\\
-  &= e^{-\theta(n + \beta)} \theta^{n \overline{y} + \alpha - 1}\\
-\end{split}
-$$
-
-So we have $Gamma(\alpha + n\overline{y}, \beta + n)$. 
-
-Thus, $n\overline{y}$ is sufficient because it is free of $\theta$.
-
-\begin{flushright}
-  %$\blacksquare$
-\end{flushright}
-
-\pagebreak
-
-# 5. Derive the gamma posterior distribution (equation 2.15) for the Poisson model parameterized in terms of rate and exposure with conjugate prior distribution.
-
-$$
-\begin{split}
-  p(\theta | y) &\propto p(y | \theta) p(\theta)\\
-  &\propto \bigg[ \theta ^{\big( \sum_{i = 1}^n y_i \big)} e ^{-(x_i) \theta} \bigg] \cdot \bigg[ \frac{\beta^{\alpha}}{\Gamma(\alpha)} \theta^{\alpha - 1} e^{-\beta \theta} \bigg]\\
-  &\propto \bigg[ \theta ^{\big( \sum_{i = 1}^n y_i \big)} e ^{-(x_i) \theta} \bigg] \cdot \bigg[ \theta^{\alpha - 1} e^{-\beta \theta} \bigg]\\
-  &= \theta^{\big( \alpha + \sum_{i = 1}^n y_i - 1 \big)} e^{- \big(\beta + \sum_{i = 1}^n x_i \big) \theta}\\
-\end{split}
-$$
-
-And thus we have the posterior as $\theta | y \sim Gamma(\alpha + \sum_{i = 1}^n y_i, \beta + \sum_{i = 1}^n x_i)$.
-
-\begin{flushright}
-  $\blacksquare$
-\end{flushright}
-
-\pagebreak
-
-# 6. The table at the end of the assignment gives the number of fatal accidents and deaths on scheduled airline flights per year over a ten year period from 1976 to 1985.
+# 3. The table at the end of the assignment gives the number of fatal accidents and deaths on scheduled airline flights per year over a ten year period from 1976 to 1985.
 
 
 ```{r}
@@ -349,29 +229,8 @@ The symmetric 95% credible interval is $(`r theta.given.y[1]`, `r theta.given.y[
 
 \pagebreak
 
-## (b) Now assume that the number of fatal accidents in each year follow independent Poisson distributions with a constant rate and an exposure in each year proportional to the number of passenger miles flown. Again using a flat prior distribution for $\theta$, determine the posterior distribution based on the data.  Give a 95% predictive interval for the number of fatal accidents in 1986 under the assumption that $8 \times 10^{11}$ passenger miles are flown that year.
 
-```{r}
-miles.flown <- (airline.deaths$passenger.deaths / airline.deaths$death.rate) * 100000000
-airline.deaths$miles.flown <- miles.flown
-airline.deaths
-
-theta.given.y <- qgamma(c(0.025, 0.975), 
-                       shape = sum(1 + airline.deaths$fatal.accidents), 
-                       rate = airline.deaths$miles.flown[1])
-
-theta.given.y
-
-plot(qpois(p=seq(0, 1, by=0.001), lambda = 1/800000000), type="l")
-
-```
-
-I'm not seeing this one. The numbers keep ending up too big or too small. Definitely missing something here. :/
-
-\pagebreak
-
-
-## (c) Repeat (a) above, replacing 'fatal accidents' with 'passenger deaths.'
+# 4. Repeat 3 above, replacing 'fatal accidents' with 'passenger deaths.'
 
 ```{r}
 
@@ -401,8 +260,4 @@ The symmetric 95% credible interval is $(`r theta.given.y[1]`, `r theta.given.y[
 \end{flushright}
 
 \pagebreak
-
-## (d) Repeat (b) above, replacing 'fatal accidents' with 'passenger deaths.'
-
-Since I couldn't figure out b), I'm not getting this one either. 
 

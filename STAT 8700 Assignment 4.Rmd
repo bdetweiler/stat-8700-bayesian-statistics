@@ -36,7 +36,12 @@ $$
   \sigma_0^2 &= 16\\
 \end{split}
 $$
- 
+
+Likelihood:
+
+$$
+  p(y_i | \alpha, \beta, n_i, x_i) \propto [logit^{-1} (\alpha + \beta x_i)]^{y_i} [1 - logit^{-1}(\alpha + \beta x_i)]^{n_i - y_i}
+$$
 Now we can use these values to calculate the joint posterior distribution, $N-Inv-\chi^2(\mu_n, \sigma_n^2/\kappa_n; \nu_n, \sigma_n^2)$:
 
 $$

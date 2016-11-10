@@ -1,0 +1,10 @@
+
+model{
+
+for (i in 1:N){
+  y[i] ~ dpois(theta) # Likelihood
+}
+
+theta ~ dgamma(1, 1) # Prior
+}
+

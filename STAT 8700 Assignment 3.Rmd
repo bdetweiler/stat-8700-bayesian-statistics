@@ -19,7 +19,7 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 # 1. Suppose we have a population described by a Normal Distribution with known variance $\sigma^2 = 1600$ and unknown mean $\mu$. 4 observations are collected from the population and the corresponding values were: 940, 1040, 910, and 990.
 
 ```{r}
-y.bar <- mean(940, 1040, 910, 990)
+y.bar <- mean(c(940, 1040, 910, 990))
 y.bar
 ```
 
