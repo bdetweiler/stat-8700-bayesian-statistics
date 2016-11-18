@@ -30,7 +30,7 @@ data {
   real<lower=0> y[N];
 }
 parameters {
-  real<lower=0> theta;
+  real<lower=0, upper=100> theta;
 }
 model {
 	theta ~ normal(20, 5);   // Prior

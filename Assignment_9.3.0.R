@@ -65,6 +65,9 @@ model {
     theta[j] ~ dbeta(alpha, beta)
   }
 
+  y72 ~ dbin(theta72, 30)
+  theta72 ~ dbeta(alpha, beta)
+
   lnx <- log(alpha / beta)
   lny <- log(alpha + beta)
 
@@ -90,44 +93,27 @@ ratsModel = jags.model(file="rats.jags",
 update(ratsModel, n.iter=2000)
 
 
-ratsSamples <- coda.samples(ratsModel, n.iter=50000, variable.names=c("alpha", "beta", "theta", "y", "lnx", "lny"), thin=5)
+ratsSamples <- coda.samples(ratsModel, n.iter=50000, variable.names=c("alpha", "beta", "theta", "y", "lnx", "lny", "y72", "theta72"), thin=5)
 
 ratsSamples.M <- as.matrix(ratsSamples)
+head(ratsSamples.M)
 
 diagMCMC(codaObject = ratsSamples, parName="alpha")
 diagMCMC(codaObject = ratsSamples, parName="beta")
+diagMCMC(codaObject = ratsSamples, parName="y72")
+diagMCMC(codaObject = ratsSamples, parName="theta72")
 
 
 hist(ratsSamples.M[,"lnx"], breaks=50, freq=F)
 hist(ratsSamples.M[,"beta"], breaks=50, freq=F)
-head(ratsSamples.M)
-
 points(ratsSamples.M[,"lnx"], ratsSamples.M[,"lny"], col="red", pch=".")
 
 # 9.3 b.) Simulating a 72nd experiment:
-thetas <- as.data.frame(c())
-ni <- as.data.frame(c())
-for (i in 1:71) {
-  ni <- sample(ratdata$N, 5000, replace=TRUE)
-  
-  thetai <- paste0("theta[", i, "]")
-  thetai.samples <- as.data.frame(sample(ratsSamples.M[,thetai], 5000, replace=TRUE))
-  thetas <- rbind(thetas, thetai.samples)
-  
-  ns <- rbind(ns, ni)
-} 
-sims <- cbind(thetas, ni)
-colnames(sims) <- c("theta", "n")
-
-experiment.72 <- rbinom(n=length(sims$n), size = sims$n, prob = sims$theta)
-summary(experiment.72)
-hist(experiment.72, breaks=30, freq=F)
-
 # 9.3 c.) Experiment will contain 30 rats
-experiment.72 <- rbinom(n = length(sims$n), size = 30, prob = sims$theta)
 
-summary(experiment.72)
-CI <- quantile(experiment.72, probs = c(0.025, 0.975))
+summary(ratsSamples.M[,"theta72"])
+summary(ratsSamples.M[,"y72"])
+CI <- quantile(ratsSamples.M[,"y72"], probs = c(0.025, 0.975))
 CI
-hist(experiment.72, breaks=30, freq=F)
+hist(ratsSamples.M[,"y72"], breaks=30, freq=F)
 abline(v=CI, col="red")

@@ -92,26 +92,6 @@ posterior_contour <- function(alpha_min,
 
 posterior_contour(-2, 4, 2001, -5, 25, 2001)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 N <- length(x)
 C <- 10000    # this just has to be large enough to ensure all phi[i]'s < 1
               # Note that JAGS will NOT WARN you if C is too small, but will sample from a truncated distribution

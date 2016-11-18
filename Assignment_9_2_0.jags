@@ -7,7 +7,7 @@ model {
     y[i] ~ dbin(p[i], n[i])
   }
 
-  # 9.2 d.)
+  # 9.2 d.) - Could make the dosage and number of animals part of the data, but we'll keep it simple for now
   px <- alpha + (beta * -0.2)
   y_pred ~ dbin(ilogit(px), 20)
 

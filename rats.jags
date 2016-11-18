@@ -6,6 +6,9 @@ model {
     theta[j] ~ dbeta(alpha, beta)
   }
 
+  y72 ~ dbin(theta72, 30)
+  theta72 ~ dbeta(alpha, beta)
+
   lnx <- log(alpha / beta)
   lny <- log(alpha + beta)
 
