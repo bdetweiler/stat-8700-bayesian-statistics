@@ -1,0 +1,18 @@
+
+model {
+
+  for (j in 1:count) {
+    y[j] ~ dbin(theta[j], N[j])
+    theta[j] ~ dbeta(alpha, beta)
+  }
+
+  lnx <- log(alpha / beta)
+  lny <- log(alpha + beta)
+
+  alpha <- u / pow(v, 2)
+  beta <- (1 - u) / pow(v, 2)
+
+  u ~ dunif(0, 1)
+  v ~ dunif(0, 1)
+}
+

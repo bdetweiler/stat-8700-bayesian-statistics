@@ -1,0 +1,43 @@
+############################################################
+## General K component mixture model, no covariates.
+############################################################
+##
+## Fixed Structural Parameters
+## I -- number of essays, i -- index for essays
+## K -- number of mixture components
+##
+## tau[I,K] <- SD from each mixture component as estimated from mixtools
+##
+## 2nd Level hyperparameters
+## tau0[K] -- mean of log precisions
+## gamma0[K] -- sd of log precisions
+## eta[I,K] -- random component for 
+##
+## 3rd level fixed hyperparameters
+data {
+  for (k in 1:K) {
+    tau0m[k] <- 0                       # log tau0 prior mean 
+    tau0p[k] <- 0.001                   # log tau0 prior precision
+    gamma0m[k] <- 0                     # gamma0 prior mean
+    gamma0p[k] <- 0.001                 # gamma0 prior precision
+  }
+}
+
+model{
+
+  ## Hyperpriors for mixtures parameters
+  for (k in 1:K) {
+    tau0[k] ~ dnorm(tau0m[k],tau0p[k])
+    ## Bug is here:  This should be dnorm instead of dgamma
+    gamma0[k] ~ dgamma(gamma0m[k],gamma0p[k])T(0,)
+  }
+
+  ## Priors for individual components
+  for(i in 1:I){
+    for (k in 1:K) {
+      eta[i,k] ~dnorm(0,1)
+      tau[i,k] <- exp(tau0[k]+gamma0[k]*eta[i,k])
+    }
+  }
+
+}
