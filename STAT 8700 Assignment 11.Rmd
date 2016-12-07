@@ -1,0 +1,87 @@
+---
+title: "STAT 8700 Homework 11"
+author: "Brian Detweiler"
+date: "Monday, December 12th"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, error=FALSE}
+library(rstan)
+library(rjags)
+source("DBDA2Eprograms/DBDA2E-utilities.R")
+```
+
+# 1. The file \texttt{planes.txt} contains 30 observations of 4 variables. You can read this into \textsf{R} using \texttt{read.table("planes.txt", header=T)}. The data is from 30 Air Force missions during the Vietnam war. The 4 variables are as follows: 
+#$y$ is the the number of damaged locations of the aircraft;
+#$x1$ is the type of aircraft, 0 for A4, 1, for A6; 
+#$x2$ is the aircraft bomb load in tons; 
+#$x3$ is the total months of aircrew experience.
+#Model $y$ in JAGS using Poisson regression with a log link function. Use DIC to determine which of the three explanatory variables should be included in your model. Once you have identified the ’best’ model, use it calculate 95% prediction intervals for the amount of damage for both A4 and A6 planes, with a crew with minimal, average, and maximal experience, for a minimal, average, and maximal bombload.
+
+```{r}
+planes <- read.table('planes.txt', header=TRUE)
+```
+
+
+```{r}
+# Log Posterior (u, v space)
+#fileName <- "Assignment_10_1_a"
+
+#modelString ="
+#model {
+#
+  #for (j in 1:count) {
+    #y[j] ~ dbin(theta[j], N[j])
+    #theta[j] ~ dbeta(alpha, beta)
+  #}
+#
+#
+#
+#
+  #lnx <- log(alpha / beta)
+  #lny <- log(alpha + beta)
+#
+  #alpha <- u / pow(v, 2)
+  #beta <- (1 - u) / pow(v, 2)
+#
+  #u ~ dunif(-2, 4)
+  #v ~ dunif(-5, 13)
+  ##u ~ dunif(0.09, 0.22)
+  ##v ~ dunif(0.08, 0.61)
+#}
+#"
+#
+#writeLines(modelString, con=fileName)
+#
+#basementsModel = jags.model(file=fileName, 
+                             #data=list(y=basement.data$y,
+                                       #N=basement.data$N, 
+                                       #count=length(basement.data$N)),
+                             #n.chains=4)
+#
+#update(basementsModel, n.iter=10000)
+
+
+#basementsSamples <- coda.samples(basementsModel, n.iter=200000, variable.names=c("alpha", "beta", "theta", "y", "lnx", "lny"), thin=20)
+#
+#basementsSamples.M <- as.matrix(basementsSamples)
+
+#summary(basementsSamples.M)
+```
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak
