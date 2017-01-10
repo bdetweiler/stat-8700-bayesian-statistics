@@ -1,0 +1,126 @@
+---
+title: "STAT 8700 Final Question 2"
+author: "Brian Detweiler"
+date: "Thursday, December 15th"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, error=FALSE}
+```
+
+# 2. (a) Consider a random sample $y_1, y_2, \hdots, y_n$ taken from a Normal population with mean = $\mu$ and known variance = $\sigma^2$. Show that the likelihood is equivalent to the likelihood of a single observation of $\overline{y}$ taken from a Normal population with a mean of $\mu^{\prime}$ and $\sigma^{2^{\prime}}$ where $\overline{y}$ is the mean of the $y$'s. Find the appropriate expressions for $\mu^{\prime}$ and $\sigma^{2^{\prime}}$.
+
+Given multiple observations of a Normal distribution with mean $\mu$ and known variance $\sigma^2$, the likelihood for observations $y_1, y_2, \hdots, y_n$ is given as
+
+$$
+\begin{split}
+    p(y_1, y_2, \hdots, y_i | \sigma^2) &= \prod_{i = 1}^n p(y_i | \sigma^2)\\
+    &= \prod_{i = 1}^n \frac{1}{\sigma \sqrt{2 \pi}} e^{- \frac{1}{2\sigma^2}} (y_i - \mu)^2\\
+    &= \bigg[ \frac{1}{\sigma \sqrt{2 \pi}} \bigg]^n e ^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \mu)^2}\\
+\end{split}
+$$
+
+where the data only appear in the exponential, $e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \mu)^2}$. Using a trick from \cite{Conjugate},
+
+$$
+\begin{split}
+    p(y_1, y_2, \hdots, y_i | \sigma^2) &\propto e ^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \mu)^2}\\
+    &\propto e^{ - \frac{1}{2\sigma^2} \sum_{i = 1}^n \big[(y_i - \overline{y}) - (\mu - \overline{y}) \big]^2}\\
+    &\propto e^{ - \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \overline{y})^2 + \sum_{i = 1}^n (\overline{y} - \mu)^2 - 2\sum_{i = 1}^n (y_i - \overline{y})(\mu - \overline{y}) } \\
+    &\propto e^{ - \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \overline{y})^2 + \sum_{i = 1}^n (\overline{y} - \mu)^2 - (\mu - \overline{y}) \bigg(\big(\sum_{i = 1}^n y_i\big) - n \overline{y} \bigg)} \\
+    &\propto e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \overline{y})^2 + \sum_{i = 1}^n (\overline{y} - \mu)^2 - (\mu - \overline{y}) (n \overline{y} - n \overline{y}) } \\
+    &\propto e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^n (y_i - \overline{y})^2 + \sum_{i = 1}^n (\overline{y} - \mu)^2 } \\
+    &\propto e^{- \frac{1}{2 \sigma^2} n s^2 + n(\overline{y} - \mu)^2 } \\
+    &\propto e^{- \frac{n s^2}{2 \sigma^2}} e^{\frac{- n(\overline{y} - \mu)^2}{2 \sigma^2}}  \\
+\end{split}
+$$
+
+And since $\sigma^2$ is constant, we can ignore it,
+
+$$
+\begin{split}
+    p(y_1, y_2, \hdots, y_i | \sigma^2) &\propto e^{\frac{- n(\overline{y} - \mu)^2}{2 \sigma^2}}  \\
+\end{split}
+$$
+
+Now, we recognize this as a member of the exponential family of distributions, specifically a Gaussian,
+
+$$
+\begin{split}
+  p(y_1, y_2, \hdots, y_i | \sigma^2) &\sim Normal\bigg(\overline{y} | \mu, \frac{\sigma^2}{n}\bigg)\\
+\end{split}
+$$
+
+This shows the equivalence to the likelihood for a single observation of $\overline{y}$, and hence, $\mu^{\prime} = \mu$ and $\sigma^{2^{\prime}} = \frac{\sigma^2}{n}$.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+# (b) Suppose that $y_i$ is Normally distributed with mean = $\mu$ and known variance = $\sigma_i^2$, for $i = 1, \hdots, n$. Show that if a uniform prior for $\mu$ is used then the posterior distribution of $\mu$ is Normal with mean = $\frac{\sum_{i = 1}^n y_i / \sigma_i^2}{\sum_{i = 1}^n 1 / \sigma_i^2}$ and variance = $(\sum_{i = 1}^n 1 / \sigma_i^2)^{-1}$
+
+# Show all working.
+
+Using a uniform prior on $\mu$ we have the improper prior,
+$$
+\begin{split}
+  p(\theta) &\propto 1\\
+\end{split}
+$$
+
+Then the conditional distribution given in \textbf{3.2} is
+$$
+\begin{split}
+  \mu|\sigma^2, y &\sim N(\overline{y}, \sigma^2 / n)\\
+\end{split}
+$$
+
+which can be rewritten as
+$$
+\begin{split}
+  \mu|\sigma^2, y &\sim N\bigg(\frac{1}{n} \sum_{i = 1}^n y_i, \frac{1}{n} \sum_{i = 1}^n \sigma_i^2 \bigg)\\
+\end{split}
+$$
+
+Note that
+$$
+\begin{split}
+   \theta | \sigma_i^2, y_i &\sim N\bigg(\frac{\sum_{i = 1}^n y_i / \sigma_i^2}{\sum_{i = 1}^n 1 / \sigma_i^2}, \Big(\sum_{i = 1}^n 1 / \sigma_i^2\Big)^{-1} \bigg) \\
+\end{split}
+$$
+can be written as
+$$
+\begin{split}
+   \theta | \sigma_i^2, y_i &\sim N\bigg(\sum_{i = 1}^n y_i, \sum_{i = 1}^n \sigma_i^2\bigg)\\
+\end{split}
+$$
+
+for $n = 1, 2, \hdots, n$.
+
+Thus, the distribution given in \textbf{3.2} is a single observation of $y$ of all $y_i$ from $i = 1, 2, \hdots, n$.
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\begin{thebibliography}{9}
+
+\bibitem{Conjugate}
+Kevin P. Murphy\\
+\textit{Conjugate Bayesian analysis of the Gaussian distribution}\\
+University of British Columbia, 2007\\
+\href{https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf}{https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf}
+\end{thebibliography}
+
+\pagebreak

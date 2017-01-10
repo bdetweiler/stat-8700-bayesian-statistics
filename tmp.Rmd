@@ -1,0 +1,144 @@
+---
+title: "STAT 8700 Final Question 6"
+author: "Brian Detweiler"
+date: "Thursday, December 15th"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  - \usepackage{booktabs}
+  
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+library(rjags)
+library(runjags)
+library(knitr)
+library(reshape2)
+library(ggplot2)
+library(dplyr)
+source("DBDA2Eprograms/DBDA2E-utilities.R")
+set.seed(0)
+```
+
+```{r, echo=FALSE}
+epl <- read.csv('epl.csv', header=TRUE)
+teams.with.names <- epl %>% 
+  select(Home.ID, Home.Team) %>%
+  arrange(Home.ID) %>%
+  unique()
+```
+
+```{r}
+# -1 Away win, 0 tie, 1 Home win
+epl$Result <- sign(epl$Home.Goals - epl$Away.Goals)
+epl.M.Home <- matrix(data = 0,
+                     nrow = 20,
+                     ncol = 20)
+
+epl.M.Away <- matrix(data = 0,
+                     nrow = 20,
+                     ncol = 20)
+
+epl$Result.Home <- epl$Result + 1
+epl$Result.Home[epl$Result.Home == 2] <- 3
+
+# Invert the Home results
+epl$Result.Away <- epl$Result * -1
+epl$Result.Away <- epl$Result.Away + 1
+epl$Result.Away[epl$Result.Away == 2] <- 3
+
+for (i in 1:20) {
+  for (j in 1:20) {
+    tmp <- epl %>% filter(Home.ID == i, Away.ID == j)
+    if (nrow(tmp) > 0) {
+      epl.M.Home[i, j] <- tmp$Result.Home
+      epl.M.Away[j, i] <- tmp$Result.Away
+    }
+  }
+}
+```
+# 6. Consider the Poisson Regression Model:
+
+$$
+\begin{split}
+  Y_i &\sim Poisson(\lambda_i)\\
+  log(\lambda_i) &= \beta_0 + \beta_1 x_1 + \cdots + \beta_k x_{ik}\\
+\end{split}
+$$
+
+# and recall that $E[Y_i] = \lambda_i$ and $Var(Y_i) = \lambda_i$. 
+
+# As discussed in class, one of the concerns with the Poisson regression model is the requirement that the mean and variance be equal, and this can cause problems if the data is overdispersed.
+
+# One solution is to replace the Poisson distribution with a version of the Negative Binomial distribution
+
+$$
+\begin{split}
+  P(Y_i = y) &= \frac{\Gamma(y + r)}{y! \Gamma(r)} p_{i}^r (1 - p_i)^y
+\end{split}
+$$
+
+# which is parameterized by $p_i$ and $r$ with $0 \leq p_i \leq 1$ and $r > 0$ (traditionally when you first learn the Negative Binomial distribution you learn that r has to be an integer, but in reality it can be any positive real number).
+
+# In this parameterization, $E[Y_i] = \frac{r(1 - p_i)}{p_i}$ and $Var(y_i) = \frac{r(1 - p_i)}{p_i^2}$. 
+
+\pagebreak
+
+## (a) If we plan to replace the Poisson distribution with the above Negative Binomial distribution in our regression, we would like to keep the same link function, namely that
+
+$log(\lambda_i) = log(E[Y_i]) = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_k x_{ik}$
+
+## Equating the mean of the Poisson with the mean of the Negative Binomial, express $p_i$  as a function of $\lambda_i$ and $r$.
+
+Equating the Poisson mean with the Negative Binomial mean, we get
+
+$$
+\begin{split}
+  E[Y_i] &= \lambda_i = \frac{r(1 - p_i)}{p_i} \\
+  p_i \lambda_i &= r(1 - p_i)\\
+  \frac{p_i}{(1 - p_i)} &= \frac{r}{\lambda_i}\\
+\end{split}
+$$
+
+## (b) Using your answer to part (a), rewrite the $Var(Y_i)$ in the Negative Binomial case in terms of $\lambda_i$ and $r$.
+
+$$
+\begin{split}
+  Var[Y_i] &= \frac{r (1 - p_i)}{p_i^2}\\
+  \frac{p_i^2}{(1 - p_i)} &= \frac{r}{\lambda_i} + \frac{r^2}{\lambda_i^2}\\
+\end{split}
+$$
+
+## (c) The model introduced in Question 4 contains two Poisson regressions, one for the Home Goals, and one for the Away Goals. Replace each of these with Negative Binomial's and use your answer to part \textbf{(a)} to connect the parameters of the Negative Binomial to the existing link functions for $log(\lambda_{ij})$ and $log(\theta_{ij})$.
+
+$$
+\begin{split}
+  H_i &\sim NegBinomial(p_h, r_h)\\
+  A_i &\sim NegBinomial(p_a, r_a)\\
+  p_h &= \frac{r_h}{r_h + \lambda_{ij}}\\
+  p_a &= \frac{r_a}{r_a + \theta_{ij}}\\
+  r_h &\sim Uniform(0, 50)\\
+  r_a &\sim Uniform(0, 50)\\
+  \lambda_{ij} &= e^{\mu + a_i - d_j + \gamma}\\
+  \theta_{ij} &= e^{\mu + a_j - d_i}\\
+\end{split}
+$$
+
+The priors on $r_h$ and $r_a$ are a Uniform with an upper bound of 50, which as noted in \cite{Social} is not restrictive. Simon Jackman notes that as $r \rightarrow \infty$, the Negative Binomial tends to the Poisson. 
+
+\begin{thebibliography}{9}
+
+\bibitem{Social}
+Jackman, Simon
+\textit{Bayesian Analysis for the Social Sciences}\\
+John Wiley \& Sons, Ltd 2009
+\end{thebibliography}
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}

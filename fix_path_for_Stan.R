@@ -1,7 +1,18 @@
 rtools <- "C:\\Users\\icom942\\Desktop\\apps\\Rtools\\bin"
 gcc <- "C:\\Users\\icom942\\Desktop\\apps\\Rtools\\mingw_64\\bin"
-
 pdflatex <- "C:\\Users\\icom942\\Desktop\\apps\\MiKTeX\\miktex\\bin"
+
+path <- strsplit(Sys.getenv("PATH"), ";")[[1]]
+new_path <- c(rtools, gcc, pdflatex, path)
+#new_path <- c(rtools, gcc, path)
+new_path <- new_path[!duplicated(tolower(new_path))]
+Sys.setenv(PATH = paste(new_path, collapse = ";"))
+Sys.getenv('PATH')
+
+
+
+
+#### Fix for LaTeX
 path <- strsplit(Sys.getenv("PATH"), ";")[[1]]
 new_path <- c(pdflatex, path)
 #new_path <- c(rtools, gcc, path)

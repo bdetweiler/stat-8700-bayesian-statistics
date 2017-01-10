@@ -1,0 +1,87 @@
+---
+title: "STAT 8700 Final Question 1"
+author: "Brian Detweiler"
+date: "Thursday, December 15th"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, error=FALSE}
+```
+
+# 1. A random variable $X$ is said to have a lognormal distribution with parameters $\mu$ and $\sigma^2$ if it has the following PDF:
+
+$$
+\frac{1}{x\sqrt{2\pi \sigma^2}} e^{- \frac{(\ln{x} - \mu)^2}{2 \sigma^2}} \text{ for } x > 0\\
+$$
+
+# Now suppose that data $x_1, \hdots, x_n$ are a random sample from a lognormal population with $\sigma^2$ known but $\mu$ unknown. Show that a $Normal(m, s^2)$ prior on $\mu$ is conjugate and find the parameters of the posterior distribution.
+# Show all working.
+
+Using the PDF above, our likelihood is
+
+$$
+\begin{split}
+p(x | \theta) &= \frac{1}{x\sqrt{2\pi \sigma^2}} e^{- \frac{(\ln{x} - \theta)^2}{2 \sigma^2}} \text{ for } x > 0\\
+              &\propto e^{- \frac{(\ln{x} - \theta)^2}{2 \sigma^2}} \\
+\end{split}
+$$
+
+With $\theta \sim Normal(m, s^2)$, we have
+
+$$
+\begin{split}
+p(\theta)  &= \frac{1}{s \sqrt{2 \pi}} e ^{-\frac{(x - m)^2}{2 s^2}}\\
+           &\propto e ^{-\frac{(x - m)^2}{2 s^2}}\\
+\end{split}
+$$
+
+Now, using Bayes' Rule, we can find our posterior distribution,
+
+$$
+\begin{split}
+p(\theta | x) &\propto p(x | \theta) \cdot p(\theta) \\
+              &= e^{- \frac{(\ln{x} - \theta)^2}{2 \sigma^2}} \cdot e ^{-\frac{(\theta - m)^2}{2 s^2}}\\
+              &= e^{- \frac{(\ln{x} - \theta)^2}{2 \sigma^2} -\frac{(\theta - m)^2}{2 s^2}} \\
+              &= e^{- \frac{1}{2 \sigma^2} (\ln{x}^2 - 2 \ln{x} \theta + \theta^2) - \frac{1}{2 s^2}(\theta^2 - 2m \theta  + m^2) } \\
+              &= e^{- \frac{1}{2\sigma^2} \ln{x}^2 - \frac{1}{2 s^2} m^2 + \theta ( \frac{1}{\sigma^2} \ln{x} + \frac{1}{s^2} m) + \theta^2(- \frac{1}{2 \sigma^2} - \frac{1}{2 s^2}) }\\
+\end{split}
+$$
+
+Let $\frac{1}{\tau_1^2} = \frac{1}{\sigma^2} + \frac{1}{s^2}$. Now, we have
+
+$$
+\begin{split}
+p(\theta | x) &\propto p(x | \theta) \cdot p(\theta) \\
+              &= e^{ \Big[\frac{ \tau_1^2}{\sigma^2} \ln{x}^2 + \frac{\tau_1^2}{s^2} m^2 - \theta \big( \frac{2 \tau_1^2}{\sigma^2} \ln{x} + \frac{2 \tau_1^2}{s^2} \big) + \theta^2 \Big] \frac{1}{2 \tau_1^2} }
+\end{split}
+$$
+
+Finally, let $\mu_1 = \frac{ \frac{1}{\sigma^2} \ln{x} + \frac{1}{2 s^2} m^2}{\frac{1}{\sigma^2} + \frac{1}{s^2}}$
+
+Now we have
+
+$$
+\begin{split}
+p(\theta | y) &\propto e ^{- \frac{1}{2 \tau_1^2} (\theta - \mu_1) ^2}
+\end{split}
+$$
+
+This implies that the posterior is $Normal(\mu_1, \tau_1^2)$.
+
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\pagebreak

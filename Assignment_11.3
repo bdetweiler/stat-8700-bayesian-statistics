@@ -1,0 +1,16 @@
+
+model {
+
+  for (j in 1:count) {
+    y[j] ~ dpois(theta[j])
+    theta[j] = exp( eta[j] )
+    eta[j] = beta1 * x1[j] + beta3 * x3[j] 
+  }
+
+  beta1 ~ dnorm(0, 1.0E-4)
+  #beta2 ~ dnorm(0, 1.0E-4)
+  
+  # Removing explanatory variable x3
+  beta3 ~ dnorm(0, 1.0E-4)
+}
+

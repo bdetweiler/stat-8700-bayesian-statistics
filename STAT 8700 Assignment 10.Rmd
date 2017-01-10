@@ -19,6 +19,7 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 library(rstan)
 library(rjags)
+library(dplyr)
 source("DBDA2Eprograms/DBDA2E-utilities.R")
 
 ```
@@ -339,6 +340,138 @@ abline(v=c(ypredCI[[1]], ypredCI[[2]]), col="red")
 \pagebreak
 
 # 3. Revisit the data in Question 1. Fit a Two-Way ANOVA to the natural log of the radon measurements. For each county in separately, construct a 95\% credible interval for the difference between the average (unlogged) radon measurement in houses with basements and in houses without basements. Test the hypothesis that the average radon measurement in houses with basements is greater than in houses without basements.
+
+```{r}
+blue.earth.basements <- radon.df %>% filter(blue.earth.level == 0) %>% select(blue.earth)
+blue.earth.no.basements <- radon.df %>% filter(blue.earth.level == 1) %>% select(blue.earth)
+clay.basements <- radon.df %>% filter(clay.level == 0) %>% select(clay)
+clay.no.basements <- radon.df %>% filter(clay.level == 1) %>% select(clay)
+goodhue.basements <- radon.df %>% filter(goodhue.level == 0) %>% select(goodhue)
+goodhue.no.basements <- radon.df %>% filter(goodhue.level == 1) %>% select(goodhue)
+
+
+fileName <- "Assignment_10_3_a"
+
+modelString ="
+model {
+  
+  for (i1 in 1:length(blue.earth.basements)) {
+    blue.earth.basements[i1] ~ dnorm(mu.blue.earth.basements, tau)
+  }
+  mu.blue.earth.basements <- m + alpha.blue.earth + beta.basements + gamma.blue.earth.basements
+
+  for (i2 in 1:length(blue.earth.no.basements)) {
+    blue.earth.no.basements[i2] ~ dnorm(mu.blue.earth.no.basements, tau)
+  }
+  mu.blue.earth.no.basements <- m + alpha.blue.earth + beta.no.basements + gamma.blue.earth.no.basements
+
+  for (i3 in 1:length(clay.basements)) {
+    clay.basements[i3] ~ dnorm(mu.clay.basements, tau)
+  }
+  mu.clay.basements <- m + alpha.clay + beta.basements + gamma.clay.basements
+
+  for (i4 in 1:length(clay.no.basements)) {
+    clay.no.basements[i4] ~ dnorm(mu.clay.no.basements, tau)
+  }
+  mu.clay.no.basements <- m + alpha.clay + beta.no.basements + gamma.clay.no.basements
+  
+  for (i5 in 1:length(goodhue.basements)) {
+    goodhue.basements[i5] ~ dnorm(mu.goodhue.basements, tau)
+  }
+  mu.goodhue.basements <- m + alpha.goodhue + beta.basements + gamma.goodhue.basements
+
+  for (i6 in 1:length(goodhue.no.basements)) {
+    goodhue.no.basements[i6] ~ dnorm(mu.goodhue.no.basements, tau)
+  }
+  mu.goodhue.no.basements <- m + alpha.goodhue + beta.no.basements + gamma.goodhue.no.basements
+
+  m ~ dnorm(0, 1.0001)
+  alpha.blue.earth ~ dnorm(0, 1.0001)
+  alpha.clay ~ dnorm(0, 1.0001)
+  alpha.goodhue ~ dnorm(0, 1.0001)
+  beta.basements ~ dnorm(0, 1.0001)
+  beta.no.basements ~ dnorm(0, 1.0001)
+  gamma.blue.earth.basements ~ dnorm(0, 1.0001)
+  gamma.blue.earth.no.basements <- -gamma.blue.earth.basements
+  gamma.clay.basements ~ dnorm(0, 1.0001)
+  gamma.clay.no.basements <- -gamma.clay.basements
+  gamma.goodhue.basements <- -gamma.blue.earth.basements - gamma.clay.basements
+  gamma.goodhue.no.basements <- -gamma.goodhue.basements
+  
+  tau ~ dgamma(0.01, 0.01) 
+
+  delta.blue.earth <- exp(mu.blue.earth.basements) - exp(mu.blue.earth.no.basements)
+  delta.clay <- exp(mu.clay.basements) - exp(mu.clay.no.basements)
+  delta.goodhue <- exp(mu.goodhue.basements) - exp(mu.goodhue.no.basements)
+  delta.all <- delta.blue.earth + delta.clay + delta.goodhue
+
+}
+"
+
+writeLines(modelString, con=fileName)
+
+anovaModel = jags.model(file=fileName, 
+                             data=list(blue.earth.basements = log(blue.earth.basements[,1]),
+                                       blue.earth.no.basements = log(blue.earth.no.basements[,1]),
+                                       clay.basements = log(clay.basements[,1]),
+                                       clay.no.basements = log(clay.no.basements[,1]),
+                                       goodhue.basements = log(goodhue.basements[,1]),
+                                       goodhue.no.basements = log(goodhue.no.basements[,1])),
+                             n.chains=4)
+
+update(anovaModel, n.iter=10000)
+
+
+anovaSamples <- coda.samples(anovaModel,
+                             n.iter=1000000, 
+                             variable.names=c("delta.blue.earth", "delta.clay", "delta.goodhue", "delta.all"),
+                             thin=50)
+diagMCMC(codaObject = anovaSamples)
+anovaSamples.M <- as.matrix(anovaSamples)
+
+delta.blue.earth <- quantile(anovaSamples.M[,"delta.blue.earth"], probs = c(0.025, 0.975))
+delta.blue.earth
+hist(anovaSamples.M[,"delta.blue.earth"], breaks = 100)
+abline(v=c(delta.blue.earth[[1]], delta.blue.earth[[2]]), col="red")
+blue.earth.p.val <- 
+  length(anovaSamples.M[,"delta.blue.earth"][which(anovaSamples.M[,"delta.blue.earth"] > 0)]) /
+  length(anovaSamples.M[,"delta.blue.earth"])
+
+delta.clay <- quantile(anovaSamples.M[,"delta.clay"], probs = c(0.025, 0.975))
+delta.clay
+hist(anovaSamples.M[,"delta.clay"], breaks = 100)
+abline(v=c(delta.clay[[1]], delta.clay[[2]]), col="red")
+clay.p.val <- 
+  length(anovaSamples.M[,"delta.clay"][which(anovaSamples.M[,"delta.clay"] > 0)]) /
+  length(anovaSamples.M[,"delta.clay"])
+
+delta.goodhue <- quantile(anovaSamples.M[,"delta.goodhue"], probs = c(0.025, 0.975))
+delta.goodhue
+hist(anovaSamples.M[,"delta.goodhue"], breaks = 100)
+abline(v=c(delta.goodhue[[1]], delta.goodhue[[2]]), col="red")
+goodhue.p.val <- 
+  length(anovaSamples.M[,"delta.goodhue"][which(anovaSamples.M[,"delta.goodhue"] > 0)]) /
+  length(anovaSamples.M[,"delta.goodhue"])
+
+delta.all <- quantile(anovaSamples.M[,"delta.all"], probs = c(0.025, 0.975))
+delta.all
+hist(anovaSamples.M[,"delta.all"], breaks = 100)
+abline(v=c(delta.all[[1]], delta.all[[2]]), col="red")
+all.p.val <- 
+  length(anovaSamples.M[,"delta.all"][which(anovaSamples.M[,"delta.all"] > 0)]) /
+  length(anovaSamples.M[,"delta.all"])
+```
+
+$$
+\begin{split}
+  H_0 &:  \text{Houses with basements do not have greater radon measurements than houses with basements.}\\
+  H_1 &:  \text{Houses with basements have greater radon measurements than houses without.}
+\end{split}
+$$
+
+$p(radon_{basements} - radon_{nobasement} \leq 0) = `r 1 - all.p.val`$
+
+The $p$-value is not in the critical region, and thus we cannot reject the null hypothesis. There appears to be no difference, on average, in radon measurements for houses with basements vs. houses without (However, in Clay county, this is clearly not the case, with a $p$-value of `r 1 - clay.p.val`).
 
 
 \begin{flushright}

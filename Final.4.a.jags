@@ -1,0 +1,45 @@
+
+model {
+  for(i in 1:120) {
+    H[i] ~ dpois(lambda[HomeTeam[i], AwayTeam[i]])
+    A[i] ~ dpois(theta[HomeTeam[i], AwayTeam[i]])
+  }
+  
+  for(i in 1:n_teams) {
+    for(j in 1:n_teams) {
+      lambda[i, j] <- exp(mu + a[i] - d[j] + gamma) 
+      theta[i, j] <- exp(mu + a[j] - d[i])
+    }
+  }
+  
+  for(j in 1:(n_teams - 1)) {
+    a[j] ~ dnorm(group_attack, group_tau)
+    d[j] ~ dnorm(group_defense, group_tau)
+  }
+  a[n_teams] <- -sum(a[1:(n_teams - 1)])
+  d[n_teams] <- -sum(d[1:(n_teams - 1)])
+
+  gamma ~ dgamma(0.01, 0.01)
+  
+  rank.a <- rank(a)
+  rank.d <- rank(d)
+  
+  for (k in 1:n_teams) {
+    for (m in 1:n_teams) {
+      #ranks.a[k, m] ~ dbern(pa[k, m])
+      #ranks.d[k, m] ~ dbern(pd[k, m])
+      #pa[k, m] <- equals(k, rank.a[m])
+      #pd[k, m] <- equals(k, rank.d[m])
+      ranks.a[k, m] <- equals(k, rank.a[m])
+      ranks.d[k, m] <- equals(k, rank.d[m])
+    }
+  }
+  
+  mu ~ dnorm(0, 0.0625)
+
+  group_attack ~ dnorm(0, 0.0625)
+  group_defense ~ dnorm(0, 0.0625)
+  group_tau <- 1 / pow(group_sigma, 2)
+  group_sigma ~ dunif(0, 3)
+}
+

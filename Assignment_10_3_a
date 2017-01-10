@@ -1,0 +1,55 @@
+
+model {
+  
+  for (i1 in 1:length(blue.earth.basements)) {
+    blue.earth.basements[i1] ~ dnorm(mu.blue.earth.basements, tau)
+  }
+  mu.blue.earth.basements <- m + alpha.blue.earth + beta.basements + gamma.blue.earth.basements
+
+  for (i2 in 1:length(blue.earth.no.basements)) {
+    blue.earth.no.basements[i2] ~ dnorm(mu.blue.earth.no.basements, tau)
+  }
+  mu.blue.earth.no.basements <- m + alpha.blue.earth + beta.no.basements + gamma.blue.earth.no.basements
+
+  for (i3 in 1:length(clay.basements)) {
+    clay.basements[i3] ~ dnorm(mu.clay.basements, tau)
+  }
+  mu.clay.basements <- m + alpha.clay + beta.basements + gamma.clay.basements
+
+  for (i4 in 1:length(clay.no.basements)) {
+    clay.no.basements[i4] ~ dnorm(mu.clay.no.basements, tau)
+  }
+  mu.clay.no.basements <- m + alpha.clay + beta.no.basements + gamma.clay.no.basements
+  
+  for (i5 in 1:length(goodhue.basements)) {
+    goodhue.basements[i5] ~ dnorm(mu.goodhue.basements, tau)
+  }
+  mu.goodhue.basements <- m + alpha.goodhue + beta.basements + gamma.goodhue.basements
+
+  for (i6 in 1:length(goodhue.no.basements)) {
+    goodhue.no.basements[i6] ~ dnorm(mu.goodhue.no.basements, tau)
+  }
+  mu.goodhue.no.basements <- m + alpha.goodhue + beta.no.basements + gamma.goodhue.no.basements
+
+  m ~ dnorm(0, 1.0001)
+  alpha.blue.earth ~ dnorm(0, 1.0001)
+  alpha.clay ~ dnorm(0, 1.0001)
+  alpha.goodhue ~ dnorm(0, 1.0001)
+  beta.basements ~ dnorm(0, 1.0001)
+  beta.no.basements ~ dnorm(0, 1.0001)
+  gamma.blue.earth.basements ~ dnorm(0, 1.0001)
+  gamma.blue.earth.no.basements <- -gamma.blue.earth.basements
+  gamma.clay.basements ~ dnorm(0, 1.0001)
+  gamma.clay.no.basements <- -gamma.clay.basements
+  gamma.goodhue.basements <- -gamma.blue.earth.basements - gamma.clay.basements
+  gamma.goodhue.no.basements <- -gamma.goodhue.basements
+  
+  tau ~ dgamma(0.01, 0.01) 
+
+  delta.blue.earth <- exp(mu.blue.earth.basements) - exp(mu.blue.earth.no.basements)
+  delta.clay <- exp(mu.clay.basements) - exp(mu.clay.no.basements)
+  delta.goodhue <- exp(mu.goodhue.basements) - exp(mu.goodhue.no.basements)
+  delta.all <- delta.blue.earth + delta.clay + delta.goodhue
+
+}
+

@@ -1,0 +1,285 @@
+---
+title: "STAT 8700 Final Question 3"
+author: "Brian Detweiler"
+date: "Thursday, December 15th"
+header-includes:
+  - \usepackage{color}
+  - \usepackage{xcolor}
+  - \usepackage{soul}
+  - \usepackage{hyperref}
+  
+output: pdf_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE)
+library(rjags)
+source("DBDA2Eprograms/DBDA2E-utilities.R")
+set.seed(0)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, error=FALSE}
+```
+
+# 3. Consider the following data representing survival times of a random sample of 20 electrical components:
+
+```{r}
+components <- c(51, 3, 17, 13, 5, 4, 17, 1, 5, 3, 8, 22, 1, 1, 13, 8, 15, 3, 1, 13)
+```
+
+# Suppose that you cannot decide which model to use and are considering the possibility that the data could be either Gamma Distributed, or Weibull Distributed, or log-Normal Distributed.
+
+
+## (a) Use DIC to decide which model is preferable.
+
+First, we'll look at the Gamma parameterized by the mean, as shown in \cite{Gamma}. 
+
+```{r}
+fileName <- "Final_3.a.jags"
+
+modelString ="
+model{
+  for (i in 1:count) {
+    y[i] ~ dgamma(sh, ra)
+  }
+
+  y.pred ~ dgamma(sh, ra)
+  # parameterized by mean (m) and standard deviation (sd)
+  sh <- pow(m, 2) / pow(sd, 2)
+  ra <- m / pow(sd, 2)
+  m ~ dunif(0,100)
+  sd ~ dunif(0,100)
+}
+"
+
+writeLines(modelString, con=fileName)
+
+components.model = jags.model(file=fileName, 
+                              data=list(y=components,
+                                        count=length(components)),
+                              n.chains=4)
+        
+update(components.model, n.iter=1000000)
+
+components.samples <- coda.samples(model = components.model,
+                                        variable.names = c("y.pred", "y", "sh", "ra", "m", "sd"), 
+                                        n.iter = 200000, 
+                                        thin = 50)
+summary(components.samples)
+diagMCMC(components.samples)
+
+components.dic <- dic.samples(model = components.model, n.iter = 200000, thin = 50)
+components.dic
+
+components.samples.M <- as.matrix(components.samples)
+
+hist(components.samples.M[,"y.pred"], breaks=100, freq=FALSE)
+```
+
+Now, we'll look at the Gamma parameterized by the mode, as also shown in \cite{Gamma}. 
+
+```{r}
+fileName <- "Final_3.a.1.jags"
+
+modelString ="
+model{
+  for (i in 1:count) {
+    y[i] ~ dgamma(sh, ra)
+  }
+
+  y.pred ~ dgamma(sh, ra)
+
+  gmean <- sh / ra
+
+  # parameterized by mode (m) and standard deviation (sd):
+  sh <- 1 + m * ra
+  ra <- ( m + sqrt( m^2 + 4 * sd^2 ) ) / ( 2 * sd^2 )
+
+
+  m ~ dunif(0,100)
+  sd ~ dunif(0,100)
+}
+"
+
+writeLines(modelString, con=fileName)
+
+components.model.1 = jags.model(file=fileName, 
+                              data=list(y=components,
+                                        count=length(components)),
+                              n.chains=4)
+        
+update(components.model.1, n.iter=1200000)
+
+components.samples.1 <- coda.samples(model = components.model.1,
+                                        variable.names = c("y.pred", "y", "gmean", "sh", "ra", "m", "sd"), 
+                                        n.iter = 200000, 
+                                        thin = 50)
+
+summary(components.samples.1)
+diagMCMC(components.samples.1)
+
+components.dic.1 <- dic.samples(model = components.model.1, n.iter = 200000, thin = 50)
+components.dic.1
+
+components.samples.M.1 <- as.matrix(components.samples.1)
+hist(components.samples.M.1[,"y.pred"], breaks=100, freq=FALSE)
+```
+
+The Gamma parameterized by the mode has a slightly better deviance score.
+
+Let's try the Weibull.
+
+```{r}
+fileName <- "Final_3.a.2.jags"
+modelString ="
+model{
+  for (i in 1:count) {
+    y[i] ~ dweib(a, b)
+  }
+
+  y.pred ~ dweib(a, b)
+
+  a ~ dgamma(0.01, 0.01)
+  b ~ dgamma(0.01, 0.01)
+}
+"
+
+writeLines(modelString, con=fileName)
+
+components.model.2 = jags.model(file=fileName, 
+                              data=list(y=components,
+                                        count=length(components)),
+                              n.chains=4)
+        
+update(components.model.2, n.iter=1200000)
+
+components.samples.2 <- coda.samples(model = components.model.2,
+                                        variable.names = c("y.pred", "y", "a", "b"), 
+                                        n.iter = 200000, 
+                                        thin = 50)
+
+summary(components.samples.2)
+diagMCMC(components.samples.2)
+
+components.dic.2 <- dic.samples(model = components.model.2, n.iter = 200000, thin = 50)
+components.dic.2
+
+components.samples.M.2 <- as.matrix(components.samples.2)
+hist(components.samples.M.2[,"y.pred"], breaks=800, freq=FALSE, xlim=c(0, 150))
+```
+
+That one did just a little worse. Now we'll try the log-normal.
+
+We'll use a Normal prior for the mean, and a Uniform variance.
+
+We need some hyperpriors for the prior on the mean. We will choose to use a slightly informative prior, since we have some data. 
+
+The sample mean is `r mean(components)`, but since we don't have a high confidence, we'll put a low precision on it.
+
+$$
+\begin{split}
+  Y_i &\sim Log-Normal(\mu, \tau)\\
+  \mu &\sim Normal(\mu_0, \tau_0)\\
+  \tau &\sim Uniform(0, 1)\\
+  \mu_0 &= \overline{y}\\
+  \tau_0 &= 0.01\\
+\end{split}
+$$
+
+```{r}
+fileName <- "Final_3.a.3.jags"
+modelString ="
+model{
+  for (i in 1:count) {
+    y[i] ~ dlnorm(mu, tau)
+  }
+
+  y.pred ~ dlnorm(mu, tau)
+
+  mu ~ dnorm(mu_0, tau_0)
+  tau ~ dunif(0, 1)
+ 
+  mu_0 <- 10.2
+  tau_0 <- .01
+
+  sigma2 <- 1 / tau
+}
+"
+
+writeLines(modelString, con=fileName)
+
+components.model.3 = jags.model(file=fileName, 
+                              data=list(y=components,
+                                        count=length(components)),
+                              n.chains=4)
+       
+update(components.model.3, n.iter=1200000)
+
+components.samples.3 <- coda.samples(model = components.model.3,
+                                        variable.names = c("y.pred", "mu", "tau", "sigma2"), 
+                                        n.iter = 200000, 
+                                        thin = 50)
+
+summary(components.samples.3)
+diagMCMC(components.samples.3)
+
+components.dic.3 <- dic.samples(model = components.model.3, n.iter = 200000, thin = 50)
+components.dic.3
+
+components.samples.M.3 <- as.matrix(components.samples.3)
+hist(components.samples.M.3[,"y.pred"], breaks=800, freq=FALSE, xlim=c(0, 150))
+```
+
+This one did slightly better than the others. 
+
+Now, we can compare all of the DIC scores and pick the best. 
+
+```{r}
+diffdic(components.dic, components.dic.1)
+diffdic(components.dic.1, components.dic.2)
+diffdic(components.dic.1, components.dic.3)
+```
+
+It looks like the thrid model, the log-normal had the best fit, although they were all fairly close.
+
+\pagebreak
+
+## (b) For the preferred model, calculate the 95% credible interval for the mean survival time.
+
+Since the log-normal is a normal distribution when the data are logged, we need to exponentiate the mean.
+
+```{r}
+hist(exp(components.samples.M.3[,"mu"]), breaks=150, freq=FALSE)
+CI <- quantile(exp(components.samples.M.3[,"mu"]), probs = c(0.025, 0.975))
+abline(v=CI, col="red")
+```
+
+The 95% credible interval for the mean survival time is (`r CI[[1]]`, `r CI[[2]]`).
+
+\pagebreak
+
+## (c) For the preferred model, calculate the 95% credible interval for the survival time of the next component to be tested.
+
+```{r}
+hist(components.samples.M.3[,"y.pred"], breaks=900, freq=FALSE, xlim = c(0, 150))
+CI <- quantile(components.samples.M.3[,"y.pred"], probs = c(0.025, 0.975))
+abline(v=CI, col="red")
+```
+
+The 95% credible interval for the survival time of the next component to be tested is (`r CI[[1]]`, `r CI[[2]]`).
+
+\begin{flushright}
+  $\blacksquare$
+\end{flushright}
+
+\begin{thebibliography}{9}
+
+\bibitem{Gamma}
+John K. Kruschke
+\textit{Gamma Likelihood Parameterized by MODE and SD}\\
+Doing Bayesian Data Analysis, August 9, 2012
+\href{http://doingbayesiandataanalysis.blogspot.com/2012/08/gamma-likelihood-parameterized-by-mode.html}{http://doingbayesiandataanalysis.blogspot.com/2012/08/gamma-likelihood-parameterized-by-mode.html}
+\end{thebibliography}
+
+\pagebreak

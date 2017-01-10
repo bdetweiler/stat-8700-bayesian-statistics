@@ -1,0 +1,17 @@
+
+model{
+  for (i in 1:count) {
+    y[i] ~ dlnorm(mu, tau)
+  }
+
+  y.pred ~ dlnorm(mu, tau)
+
+  mu ~ dnorm(mu_0, tau_0)
+  tau ~ dunif(0, 1)
+ 
+  mu_0 <- 10.2
+  tau_0 <- .01
+
+  sigma2 <- 1 / tau
+}
+

@@ -1,0 +1,15 @@
+
+model {
+
+  for (j in 1:count) {
+    y[j] ~ dpois(theta[j])
+    theta[j] = exp( eta[j] )
+    eta[j] = beta1 * x1[j] + beta2 * x2[j] + beta3 * x3[j]
+  }
+
+  beta1 ~ dnorm(0, 1.0E-4)
+  beta2 ~ dnorm(0, 1.0E-4)
+  beta3 ~ dnorm(0, 1.0E-4)
+  beta4 ~ dnorm(0, 1.0E-4)
+}
+

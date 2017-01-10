@@ -1,0 +1,17 @@
+
+model {
+
+  for (j in 1:count) {
+    y[j] ~ dpois(theta[j] * (1 - U))
+    theta[j] <- exp(beta1 * x1[j] + beta2 * x2[j] + beta3 * x3[j])
+  }
+
+  U ~ dbern(pi0)
+  pi0 ~ dbeta(1, 1)
+
+  beta1 ~ dnorm(0, 1.0E-4)
+  beta2 ~ dnorm(0, 1.0E-4)
+  beta3 ~ dnorm(0, 1.0E-4)
+
+}
+

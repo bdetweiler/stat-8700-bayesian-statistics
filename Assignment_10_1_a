@@ -12,7 +12,7 @@ model {
   alpha <- u / pow(v, 2)
   beta <- (1 - u) / pow(v, 2)
 
-  u ~ dunif(0, 1)
-  v ~ dunif(0, 1)
+  u ~ dunif(-1, 1)
+  v ~ dunif(-1, 1)
 }
 

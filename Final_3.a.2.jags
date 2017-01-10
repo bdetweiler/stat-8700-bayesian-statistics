@@ -1,0 +1,12 @@
+
+model{
+  for (i in 1:count) {
+    y[i] ~ dweib(a, b)
+  }
+
+  y.pred ~ dweib(a, b)
+
+  a ~ dgamma(0.01, 0.01)
+  b ~ dgamma(0.01, 0.01)
+}
+

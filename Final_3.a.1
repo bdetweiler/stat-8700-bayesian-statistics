@@ -1,0 +1,19 @@
+
+model{
+  for (i in 1:count) {
+    y[i] ~ dgamma(sh, ra)
+  }
+
+  y.pred ~ dgamma(sh, ra)
+
+  gmean <- sh / ra
+
+  # parameterized by mode (m) and standard deviation (sd):
+  sh <- 1 + m * ra
+  ra <- ( m + sqrt( m^2 + 4 * sd^2 ) ) / ( 2 * sd^2 )
+
+
+  m ~ dunif(0,100)
+  sd ~ dunif(0,100)
+}
+
